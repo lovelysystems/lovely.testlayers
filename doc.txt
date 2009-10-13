@@ -1,0 +1,167 @@
+Lovely Testing Layers for use with zope.testing
+***********************************************
+
+====================================
+Test layers with working directories
+====================================
+
+There is a mixin class that provides usefull methods to generate a
+working directory and make snapshots thereof.
+
+    >>> from lovely.testlayers.layer import WorkDirectoryLayer
+
+Let us create a sample layer.
+
+    >>> class MyLayer(WorkDirectoryLayer):
+    ...     def __init__(self, name):
+    ...         self.__name__ = name
+
+    >>> myLayer = MyLayer('mylayer')
+
+To initialize the directories we need to create the directory structure.
+
+    >>> myLayer.setUpWD()
+
+We can get relative paths by using the os.path join syntax.
+
+    >>> myLayer.wdPath('a', 'b')
+    '.../__builtin__.MyLayer.mylayer/work/a/b'
+
+Let us create a directory.
+
+    >>> import os
+    >>> os.mkdir(myLayer.wdPath('firstDirectory'))
+
+And make a snapshot.
+
+    >>> myLayer.makeSnapshot('first')
+
+We can check if we have a snapshot.
+
+    >>> myLayer.hasSnapshot('first')
+    True
+
+And now we make a second directory and another snapshot.
+
+    >>> os.mkdir(myLayer.wdPath('secondDirectory'))
+    >>> myLayer.makeSnapshot('second')
+
+We now have 2 directories.
+
+    >>> sorted(os.listdir(myLayer.wdPath()))
+    ['firstDirectory', 'secondDirectory']
+
+We now restore the "first" snapshot
+
+    >>> myLayer.restoreSnapshot('first')
+    >>> sorted(os.listdir(myLayer.wdPath()))
+    ['firstDirectory']
+
+We can also restore the "second" snapshot.
+
+    >>> myLayer.restoreSnapshot('second')
+    >>> sorted(os.listdir(myLayer.wdPath()))
+    ['firstDirectory', 'secondDirectory']
+
+We can also override snapshots.
+
+    >>> os.mkdir(myLayer.wdPath('thirdDirectory'))
+    >>> myLayer.makeSnapshot('first')
+    >>> myLayer.restoreSnapshot('first')
+    >>> sorted(os.listdir(myLayer.wdPath()))
+    ['firstDirectory', 'secondDirectory', 'thirdDirectory']
+
+====================
+memcached test layer
+====================
+
+This layer starts and stops a memcached daemon on given port (default
+is 11222)
+
+    >>> from lovely.testlayers import memcached
+
+    >>> ml = memcached.MemcachedLayer('ml')
+
+So let us setup the server.
+
+    >>> ml.setUp()
+
+Now we can acces memcached on port 11222.
+
+    >>> import telnetlib
+    >>> tn =  telnetlib.Telnet('localhost', 11222)
+    >>> tn.close()
+
+No more after teardown.
+
+    >>> ml.tearDown()
+    >>> tn =  telnetlib.Telnet('localhost', 11222)
+    Traceback (most recent call last):
+    ...
+    error:...Connection refused...
+
+
+====================
+Cassandra test layer
+====================
+
+This layer starts and stops a cassandra instance with a given storage
+configuration template. For information about cassandra see:
+http://en.wikipedia.org/wiki/Cassandra_(database)
+
+    >>> from lovely.testlayers import cass
+
+An example template exists in this directory which we now use for this
+example.
+
+    >>> import os
+    >>> storage_conf_tmpl = os.path.join(os.path.dirname(__file__),
+    ...                                  'storage-conf.xml.in')
+
+The following keys are provided when the template gets evaluated. Let
+us look them up in the example file.
+
+    >>> import re
+    >>> tmpl_pat = re.compile(r'.*\%\(([^ \)]+)\)s.*')
+    >>> conf_keys = set()
+    >>> for l in file(storage_conf_tmpl).readlines():
+    ...     m = tmpl_pat.match(l)
+    ...     if m:
+    ...         conf_keys.add(m.group(1))
+
+
+    >>> sorted(conf_keys)
+    ['control_port', 'storage_port', 'thrift_port', 'var']
+
+With the storage configuration path we can instantiate a new cassandra
+layer. The thrift_port, storage_port, and control_port are optional
+keyword arguments for the constructor and default to the standard port
++10000.
+
+    >>> l = cass.CassandraLayer('l', storage_conf=storage_conf_tmpl)
+    >>> l.thrift_port
+    19160
+
+So let us setup the server.
+
+    >>> l.setUp()
+
+Now the cassandra server is up and running. We test this by connecting
+to the thrift port via telnet.
+
+    >>> import telnetlib
+    >>> tn = telnetlib.Telnet('localhost', l.thrift_port)
+    >>> tn.close()
+
+The connection is refused after teardown.
+
+    >>> l.tearDown()
+
+    >>> telnetlib.Telnet('localhost', l.thrift_port)
+    Traceback (most recent call last):
+    ...
+    error:...Connection refused
+
+
+
+

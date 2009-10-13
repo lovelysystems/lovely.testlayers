@@ -1,0 +1,63 @@
+====================
+Cassandra test layer
+====================
+
+This layer starts and stops a cassandra instance with a given storage
+configuration template. For information about cassandra see:
+http://en.wikipedia.org/wiki/Cassandra_(database)
+
+    >>> from lovely.testlayers import cass
+
+An example template exists in this directory which we now use for this
+example.
+
+    >>> import os
+    >>> storage_conf_tmpl = os.path.join(os.path.dirname(__file__),
+    ...                                  'storage-conf.xml.in')
+
+The following keys are provided when the template gets evaluated. Let
+us look them up in the example file.
+
+    >>> import re
+    >>> tmpl_pat = re.compile(r'.*\%\(([^ \)]+)\)s.*')
+    >>> conf_keys = set()
+    >>> for l in file(storage_conf_tmpl).readlines():
+    ...     m = tmpl_pat.match(l)
+    ...     if m:
+    ...         conf_keys.add(m.group(1))
+
+
+    >>> sorted(conf_keys)
+    ['control_port', 'storage_port', 'thrift_port', 'var']
+
+With the storage configuration path we can instantiate a new cassandra
+layer. The thrift_port, storage_port, and control_port are optional
+keyword arguments for the constructor and default to the standard port
++10000.
+
+    >>> l = cass.CassandraLayer('l', storage_conf=storage_conf_tmpl)
+    >>> l.thrift_port
+    19160
+
+So let us setup the server.
+
+    >>> l.setUp()
+
+Now the cassandra server is up and running. We test this by connecting
+to the thrift port via telnet.
+
+    >>> import telnetlib
+    >>> tn = telnetlib.Telnet('localhost', l.thrift_port)
+    >>> tn.close()
+
+The connection is refused after teardown.
+
+    >>> l.tearDown()
+
+    >>> telnetlib.Telnet('localhost', l.thrift_port)
+    Traceback (most recent call last):
+    ...
+    error:...Connection refused
+
+
+

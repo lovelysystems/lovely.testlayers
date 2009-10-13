@@ -1,0 +1,47 @@
+<Storage>
+  <ClusterName>Test Cluster</ClusterName>
+  <Keyspaces>
+    <Keyspace Name="Testing">
+      <ColumnFamily CompareWith="BytesType"
+                    Name="CF1"/>
+    </Keyspace>
+  </Keyspaces>
+  <Partitioner>org.apache.cassandra.dht.RandomPartitioner</Partitioner>
+  <InitialToken></InitialToken>
+  <EndPointSnitch>org.apache.cassandra.locator.EndPointSnitch</EndPointSnitch>
+  <ReplicaPlacementStrategy>org.apache.cassandra.locator.RackUnawareStrategy</ReplicaPlacementStrategy>
+  <ReplicationFactor>1</ReplicationFactor>
+  <CommitLogDirectory>%(var)s/cassandra/commitlog</CommitLogDirectory>
+  <DataFileDirectories>
+    <DataFileDirectory>%(var)s/cassandra/data</DataFileDirectory>
+  </DataFileDirectories>
+  <CalloutLocation>%(var)s/cassandra/callouts</CalloutLocation>
+  <BootstrapFileDirectory>%(var)s/cassandra/bootstrap</BootstrapFileDirectory>
+  <StagingFileDirectory>%(var)s/cassandra/staging</StagingFileDirectory>
+  <Seeds>
+    <Seed>127.0.0.1</Seed>
+  </Seeds>
+  <RpcTimeoutInMillis>5000</RpcTimeoutInMillis>
+  <CommitLogRotationThresholdInMB>128</CommitLogRotationThresholdInMB>
+  <ListenAddress>localhost</ListenAddress>
+  <StoragePort>%(storage_port)s</StoragePort>
+  <ControlPort>%(control_port)s</ControlPort>
+  <ThriftAddress>localhost</ThriftAddress>
+  <ThriftPort>%(thrift_port)s</ThriftPort>
+  <ThriftFramedTransport>false</ThriftFramedTransport>
+  <SlicedBufferSizeInKB>64</SlicedBufferSizeInKB>
+  <FlushDataBufferSizeInMB>32</FlushDataBufferSizeInMB>
+  <FlushIndexBufferSizeInMB>8</FlushIndexBufferSizeInMB>
+  <ColumnIndexSizeInKB>64</ColumnIndexSizeInKB>
+  <MemtableSizeInMB>64</MemtableSizeInMB>
+  <MemtableObjectCountInMillions>0.1</MemtableObjectCountInMillions>
+  <ConcurrentReads>8</ConcurrentReads>
+  <ConcurrentWrites>32</ConcurrentWrites>
+  <CommitLogSync>periodic</CommitLogSync>
+  <CommitLogSyncPeriodInMS>1000</CommitLogSyncPeriodInMS>
+  <GCGraceSeconds>864000</GCGraceSeconds>
+  <FlushMinThreads>1</FlushMinThreads>
+  <FlushMaxThreads>1</FlushMaxThreads>
+  <BinaryMemtableSizeInMB>256</BinaryMemtableSizeInMB>
+</Storage>
+

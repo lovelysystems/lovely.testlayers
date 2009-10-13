@@ -1,0 +1,29 @@
+====================
+memcached test layer
+====================
+
+This layer starts and stops a memcached daemon on given port (default
+is 11222)
+
+    >>> from lovely.testlayers import memcached
+
+    >>> ml = memcached.MemcachedLayer('ml')
+
+So let us setup the server.
+
+    >>> ml.setUp()
+
+Now we can acces memcached on port 11222.
+
+    >>> import telnetlib
+    >>> tn =  telnetlib.Telnet('localhost', 11222)
+    >>> tn.close()
+
+No more after teardown.
+
+    >>> ml.tearDown()
+    >>> tn =  telnetlib.Telnet('localhost', 11222)
+    Traceback (most recent call last):
+    ...
+    error:...Connection refused...
+

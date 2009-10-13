@@ -1,0 +1,69 @@
+====================================
+Test layers with working directories
+====================================
+
+There is a mixin class that provides usefull methods to generate a
+working directory and make snapshots thereof.
+
+    >>> from lovely.testlayers.layer import WorkDirectoryLayer
+
+Let us create a sample layer.
+
+    >>> class MyLayer(WorkDirectoryLayer):
+    ...     def __init__(self, name):
+    ...         self.__name__ = name
+
+    >>> myLayer = MyLayer('mylayer')
+
+To initialize the directories we need to create the directory structure.
+
+    >>> myLayer.setUpWD()
+
+We can get relative paths by using the os.path join syntax.
+
+    >>> myLayer.wdPath('a', 'b')
+    '.../__builtin__.MyLayer.mylayer/work/a/b'
+
+Let us create a directory.
+
+    >>> import os
+    >>> os.mkdir(myLayer.wdPath('firstDirectory'))
+
+And make a snapshot.
+
+    >>> myLayer.makeSnapshot('first')
+
+We can check if we have a snapshot.
+
+    >>> myLayer.hasSnapshot('first')
+    True
+
+And now we make a second directory and another snapshot.
+
+    >>> os.mkdir(myLayer.wdPath('secondDirectory'))
+    >>> myLayer.makeSnapshot('second')
+
+We now have 2 directories.
+
+    >>> sorted(os.listdir(myLayer.wdPath()))
+    ['firstDirectory', 'secondDirectory']
+
+We now restore the "first" snapshot
+
+    >>> myLayer.restoreSnapshot('first')
+    >>> sorted(os.listdir(myLayer.wdPath()))
+    ['firstDirectory']
+
+We can also restore the "second" snapshot.
+
+    >>> myLayer.restoreSnapshot('second')
+    >>> sorted(os.listdir(myLayer.wdPath()))
+    ['firstDirectory', 'secondDirectory']
+
+We can also override snapshots.
+
+    >>> os.mkdir(myLayer.wdPath('thirdDirectory'))
+    >>> myLayer.makeSnapshot('first')
+    >>> myLayer.restoreSnapshot('first')
+    >>> sorted(os.listdir(myLayer.wdPath()))
+    ['firstDirectory', 'secondDirectory', 'thirdDirectory']
