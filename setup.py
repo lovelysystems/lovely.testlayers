@@ -40,6 +40,8 @@ setup(
     name = 'lovely.testlayers',
     version = '0.1.0a1',
     author = "Lovely Systems",
+    author_email = 'office@lovelysystems.com',
+    url = 'http://code.google.com/p/lovely-testlayers/',
     description="Testing Layers for use with zope.testing",
     long_description=long_description,
     keywords = "testing zope layer test cassandra memcached",
