@@ -45,7 +45,6 @@ setup(
     author = "Lovely Systems",
     author_email = 'office@lovelysystems.com',
     package_dir = {'':'src'},
-    package_data = {'' : ['*.*']},
     keywords = "testing zope layer test cassandra memcached",
     license = "Apache License 2.0",
     zip_safe = True,
