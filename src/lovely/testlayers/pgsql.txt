@@ -1,0 +1,326 @@
+================
+pgserver control
+================
+
+    >>> from lovely.testlayers import pgsql
+    >>> import tempfile, os
+    >>> tmp = tempfile.mkdtemp()
+    >>> dbDir = os.path.join(tmp, 'db')
+    >>> dbDirFake = os.path.join(tmp, 'dbfake')
+
+    >>> dbName = 'testing'
+
+Let us create a postgres server.
+
+    >>> srv = pgsql.Server(dbDir, port=16666)
+
+Optional we could also define a path to a special postgresql.conf file
+to use, otherwise defaults are used.
+
+    >>> srv.postgresqlConf
+    '/.../lovely/testlayers/postgresql8....conf'
+
+    >>> srvFake = pgsql.Server(dbDirFake, postgresqlConf=srv.postgresqlConf)
+    >>> srvFake.postgresqlConf == srv.postgresqlConf
+    True
+
+The path needs to exist.
+
+    >>> pgsql.Server(dbDirFake, postgresqlConf='/not/existing/path')
+    Traceback (most recent call last):
+    ...
+    ValueError: postgresqlConf not found '/not/existing/path'
+
+We can also specify the pg_config executable which defaults to
+'pg_config' and therefore needs to be in the path.
+
+    >>> srv.pgConfig
+    '/.../pg_config'
+
+    >>> pgsql.Server(dbDirFake, pgConfig='notexistingcommand')
+    Traceback (most recent call last):
+    ...
+    ValueError: pgConfig not found 'notexistingcommand'
+
+The server is aware of its version, which is represented as a tuple of ints.
+
+    >>> srv.pgVersion
+    (8, ..., ...)
+
+And init the db.
+
+    >>> srv.initDB()
+    >>> srv.start()
+
+    >>> srv.createDB(dbName)
+
+Now we can get a list of databases.
+
+    >>> sorted(srv.listDatabases())
+    ['postgres', 'template0', 'template1', 'testing']
+
+
+Run SQL scripts
+================
+
+We can run scripts from the filesystem.
+
+    >>> script = os.path.join(tmp, 'ascript.sql')
+    >>> f = file(script, 'w')
+    >>> f.write("""create table a (title varchar);""")
+    >>> f.close()
+    >>> srv.runScripts(dbName, [script])
+
+Or from the shared directories by prefixing it with pg_config. So let
+us install tsearch2.
+
+    >>> script = 'pg_config:share:contrib/tsearch2.sql'
+    >>> srv.runScripts(dbName, [script])
+
+
+Dump and Restore
+================
+
+Let us make a dump of our database
+
+    >>> dumpA = os.path.join(tmp, 'a.sql')
+    >>> srv.dump(dbName, dumpA)
+
+And now some changes
+
+    >>> import psycopg2
+    >>> cs = "dbname='%s' host='127.0.0.1' port='16666'" % dbName
+    >>> conn = psycopg2.connect(cs)
+    >>> cur = conn.cursor()
+
+    >>> for i in range(5):
+    ...     cur.execute('insert into a values(%i)' % i)
+    >>> conn.commit()
+
+    >>> cur.close()
+    >>> conn.close()
+
+Another dump.
+
+    >>> dumpB = os.path.join(tmp, 'b.sql')
+    >>> srv.dump(dbName, dumpB)
+
+We restore dumpA and the table is emtpy.
+
+    >>> srv.restore(dbName, dumpA)
+
+    >>> conn = psycopg2.connect(cs)
+    >>> cur = conn.cursor()
+
+    >>> cur.execute('select count(*) from a')
+    >>> cur.fetchone()
+    (0L,)
+
+    >>> cur.close()
+    >>> conn.close()
+
+Now restore dumpB and we have our 5 rows back.
+
+    >>> srv.restore(dbName, dumpB)
+
+    >>> conn = psycopg2.connect(cs)
+    >>> cur = conn.cursor()
+
+    >>> cur.execute('select count(*) from a')
+    >>> cur.fetchone()
+    (5L,)
+
+    >>> cur.close()
+    >>> conn.close()
+
+If we try to restore a none existing file we gat a ValueError.
+
+    >>> srv.restore(dbName, 'asdf')
+    Traceback (most recent call last):
+    ...
+    ValueError: No such file '.../asdf'
+
+    >>> srv.stop()
+
+
+PGDB Scripts
+============
+
+We can generate a control script for use as commandline script.
+
+The simplest script is just to define a server.
+
+    >>> dbDir2 = os.path.join(tmp, 'db2')
+    >>> main = pgsql.PGDBScript(dbDir2, port=16666)
+    >>> main.start()
+    >>> sorted(main.srv.listDatabases())
+    ['postgres', 'template0', 'template1']
+    >>> main.stop()
+
+
+We can also define a database to be created upon startup.
+
+    >>> main = pgsql.PGDBScript(dbDir2, dbName='hoschi', port=16666)
+    >>> main.start()
+    >>> sorted(main.srv.listDatabases())
+    ['hoschi', 'postgres', 'template0', 'template1']
+    >>> main.stop()
+
+The database is created only one time.
+
+    >>> main.start()
+    >>> main.stop()
+
+And also scripts to be executed.
+
+    >>> main = pgsql.PGDBScript(dbDir2, dbName='hoschi2',
+    ...                          scripts=[script], port=16666)
+    >>> main.start()
+
+Note that we used the same directory here so the other db is still there.
+
+    >>> sorted(main.srv.listDatabases())
+    ['hoschi', 'hoschi2', 'postgres', 'template0', 'template1']
+
+We can run the scripts again. Note that scripts should always be
+none-destructive. So if a schema update is due one just needs
+to run all scripts again.
+
+    >>> main.runscripts()
+
+    >>> main.stop()
+
+
+Finally do some cleanup::
+
+    >>> import shutil
+    >>> shutil.rmtree(tmp)
+
+PGDatabaseLayer
+===============
+
+Let's create a layer::
+
+    >>> layer = pgsql.PGDatabaseLayer('testing')
+
+We can get the store uri.
+
+    >>> layer.storeURI()
+    'postgres://localhost:15432/testing'
+
+    >>> layer.setUp()
+    >>> layer.tearDown()
+
+The second time the server ist started it takes the snapshot.
+
+    >>> layer.setUp()
+    >>> layer.tearDown()
+
+If we try to run setup twice or the port is occupied, we get an error.
+
+    >>> layer.setUp()
+    >>> layer.setUp()
+    Traceback (most recent call last):
+    ...
+    RuntimeError: Port already listening: 15432
+    >>> layer.tearDown()
+
+
+We can have appsetup definitions and sql scripts.  There is also a
+convinience class that let's us execute sql statements as setup.
+
+    >>> setup = pgsql.ExecuteSQL('create table testing (title varchar)')
+    >>> layer = pgsql.PGDatabaseLayer('testing', setup=setup)
+    >>> layer.setUp()
+    >>> layer.tearDown()
+    >>> layer = pgsql.PGDatabaseLayer('testing', setup=setup)
+    >>> layer.setUp()
+    >>> layer.tearDown()
+
+Also if the database name is different, the same snapshots can be used.
+
+    >>> layer2 = pgsql.PGDatabaseLayer('testing2', setup=setup)
+    >>> layer2.setUp()
+    >>> layer2.tearDown()
+
+If we do not provide the snapsotIdent the ident is built by using the
+dotted name of the setup callable and the hash of the arguments.
+
+    >>> layer.snapshotIdent
+    u'lovely.testlayers.pgsql.ExecuteSQLf9bb47b1baeff8d57f8f0dadfc91b99a3ee56991'
+
+Let us provide an ident and scripts.
+
+    >>> layer = pgsql.PGDatabaseLayer('testing3', setup=setup,
+    ...                               snapshotIdent='blah',
+    ...                               scripts=['pg_config:share:contrib/tsearch2.sql'])
+    >>> layer.snapshotIdent
+    'blah'
+    >>> layer.scripts
+    ['pg_config:share:contrib/tsearch2.sql']
+
+
+On setup the snapshot with the setup is created, therefore setup is
+called with the server as argument.
+
+    >>> layer.setUp()
+
+Upon testSetUp this snapshot is now restored.
+
+    >>> layer.testSetUp()
+
+So now we should have the table there.
+
+    >>> cs = "dbname='testing3' host='127.0.0.1' port='15432'"
+    >>> conn = psycopg2.connect(cs)
+    >>> cur = conn.cursor()
+
+    >>> cur.execute('select * from testing')
+    >>> cur.fetchall()
+    []
+
+    >>> cur.close()
+    >>> conn.close()
+
+Let us add some data (we are now in a test):
+
+    >>> conn = psycopg2.connect(cs)
+    >>> cur = conn.cursor()
+
+    >>> cur.execute("insert into testing values('hoschi')")
+    >>> conn.commit()
+
+    >>> cur.execute('select * from testing')
+    >>> cur.fetchall()
+    [('hoschi',)]
+
+    >>> cur.close()
+    >>> conn.close()
+
+    >>> layer.testTearDown()
+
+Now the next test comes.
+
+    >>> layer.testSetUp()
+
+Make sure we can abort a transaction. The storm synch needs to be
+removed at this time.
+
+    >>> import transaction
+    >>> transaction.abort()
+
+And the data is gone but the table is still there.
+
+    >>> conn = psycopg2.connect(cs)
+    >>> cur = conn.cursor()
+
+    >>> cur.execute('select * from testing')
+    >>> cur.fetchall()
+    []
+
+    >>> cur.close()
+    >>> conn.close()
+
+    >>> layer.tearDown()
+
+

@@ -37,6 +37,9 @@ def test_suite():
         DocFileSuite('cass.txt',
                      optionflags=doctest.NORMALIZE_WHITESPACE|doctest.ELLIPSIS,
                      ),
+        DocFileSuite('pgsql.txt',
+                     optionflags=doctest.NORMALIZE_WHITESPACE|doctest.ELLIPSIS,
+                     ),
         )
     # the cassandra test needs an internet connection for downloading cassandra
     suites[2].level=2

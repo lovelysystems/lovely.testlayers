@@ -1,0 +1,457 @@
+##############################################################################
+#
+# Copyright 2009 Lovely Systems AG
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+##############################################################################
+
+import time
+import os
+import stat
+import sys
+import sha
+from optparse import OptionParser
+import tempfile
+import shutil
+import psycopg2
+import transaction
+from lovely.testlayers import util
+
+here = os.path.dirname(__file__)
+BASE = os.path.join(tempfile.gettempdir(), __name__)
+
+Q_PIDS="""select procpid from
+pg_stat_activity where datname='%s' and procpid <> pg_backend_pid();"""
+
+def dotted_name(obj):
+    return u'.'.join([obj.__module__ ,obj.__name__])
+
+def system(c):
+
+    """execute a system call and raise SystemError on failure
+
+    >>> system('ls')
+    >>> system('unknowncommand')
+    Traceback (most recent call last):
+    ...
+    SystemError: ('Failed', 'unknowncommand')
+
+    """
+
+    if os.system(c):
+        raise SystemError("Failed", c)
+
+
+class Server(object):
+    """ Class to control a pg server"""
+
+    postgresqlConf = None
+
+    def __init__(self, dbDir=None, host='127.0.0.1', port=5432,
+                 verbose=False, pgConfig='pg_config', postgresqlConf=None):
+        self.verbose = verbose
+        self.port = port
+        self.host = host
+        self.dbDir = dbDir
+
+        f = os.popen('which "%s"' % pgConfig)
+        self.pgConfig = f.read().strip()
+        f.close()
+        if not self.pgConfig:
+            raise ValueError, "pgConfig not found %r" % pgConfig
+        f = os.popen('%s --version' % self.pgConfig)
+        self.pgVersion = tuple(map(int,f.read().strip().split()[1].split('.')))
+        f.close()
+
+        if postgresqlConf is None:
+            found = False
+            for i in range(len(self.pgVersion)):
+                v = '.'.join(map(str, self.pgVersion[:len(self.pgVersion)-i]))
+                name = 'postgresql%s.conf' % v
+                path = os.path.join(here, name)
+                if os.path.exists(path):
+                    self.postgresqlConf = path
+                    found = True
+                    break
+            if not found:
+                raise RuntimeError, "postgresql.conf not found for " \
+                      "version %r" % (self.pgVersion,)
+        else:
+            if not os.path.exists(postgresqlConf):
+                raise ValueError, "postgresqlConf not found %r" % postgresqlConf
+            self.postgresqlConf = postgresqlConf
+        f = os.popen('%s --bindir' % self.pgConfig)
+        self.binDir = f.read().strip()
+        f.close()
+        f = os.popen('%s --sharedir' % self.pgConfig)
+        self.shareDir = f.read().strip()
+        f.close()
+        self.psql = '%s -q -h %s -p %s' % (self.cmd('psql'),
+                                        self.host,
+                                        self.port)
+
+    def cmd(self, name):
+        return os.path.join(self.binDir, name)
+
+    def createDB(self, dbName):
+        cmd = '%s -q -p %s -h %s %s' % (self.cmd('createdb'),
+                                        self.port, self.host, dbName)
+        system(cmd)
+
+    def disconnectAll(self, dbName):
+        """disconnects all from this db"""
+
+        cs = "dbname='%s' host='%s' port='%i'" % (dbName, self.host, self.port)
+        conn = psycopg2.connect(cs)
+        cur = conn.cursor()
+        cur.execute(Q_PIDS)
+        pids = cur.fetchall()
+        for pid, in pids:
+            self.ctl(' kill TERM %s' % pid)
+        cur.close()
+        conn.close()
+
+    def dropDB(self, dbName):
+        if not dbName in self.listDatabases():
+            return
+        self.disconnectAll(dbName)
+        cmd = '%s -q -p %s -h %s %s' % (self.cmd('dropdb'),
+                                        self.port, self.host, dbName)
+        system(cmd)
+
+    def runScripts(self, dbName, scripts):
+        """runs sql scripts from given paths"""
+        for script in scripts:
+            script = self._resolvePath(script)
+            if self.verbose:
+                output = ''
+            else:
+                output = '>/dev/null 2>&1'
+            system('%s -q -f %s %s %s' % (
+                                    self.psql, script, dbName, output))
+
+    def _resolvePath(self, path):
+        parts = path.split(':')
+        if not path.startswith('pg_config:') or len(parts)!=3:
+            return os.path.abspath(path)
+        ignored, opt, path = parts
+
+        assert opt in ('bin', 'doc', 'include', 'share', 'locale')
+        f = os.popen('%s --%sdir' % (self.pgConfig, opt))
+        base = f.read().strip()
+        f.close()
+        return os.path.join(base, path)
+
+    def initDB(self):
+        cmd = '%s -A trust -D %s >/dev/null' % (self.cmd('initdb'),
+                                                self.dbDir)
+        t = time.time()
+        system(cmd)
+        print >> sys.stderr, "INITDB: %r in %s secs" % (self.dbDir,
+                                                        time.time()-t)
+
+
+    def _copyConf(self):
+        to = os.path.join(self.dbDir, 'postgresql.conf')
+        if os.path.exists(to) and (
+            os.stat(to)[stat.ST_MTIME] <= os.stat(
+            self.postgresqlConf)[stat.ST_MTIME]):
+            return False
+        # copy conf
+        shutil.copyfile(self.postgresqlConf, to)
+        return True
+
+    def ctl(self, arg):
+        cmd = '%s -l "%s" -D %s %s' % (self.cmd('pg_ctl'),
+                                       self.pgCtlLog,
+                                       self.dbDir, arg)
+        system(cmd)
+
+    @property
+    def pgCtlLog(self):
+        base = self.dbDir or tempfile.gettempdir()
+        return os.path.join(base, 'pg_ctl.log')
+
+    def start(self):
+        self._copyConf()
+        self.ctl('-o "-p %s" -s -w start' % self.port)
+
+    def stop(self):
+        self.ctl('stop -s -w -m fast > /dev/null')
+
+    def isRunning(self):
+        o, i , e = os.popen3('%s -D %s -w status' % (self.cmd('pg_ctl'),
+                                                     self.dbDir))
+        res = i.read()
+        o.close()
+        i.close()
+        e.close()
+        return 'is running' in res
+
+    def isListening(self):
+        i, o, e = os.popen3('%s -l' % self.psql)
+        return not e.read()
+
+    def listDatabases(self):
+        f = os.popen('%s -l' % self.psql)
+        res = f.read()
+        res = res.split('\n')[3:]
+        dbs = []
+        for l in res:
+            if not l or l.startswith('('):
+                break
+            dbs.append(l.split('|', 1)[0].strip())
+        f.close()
+        return dbs
+
+    def dump(self, dbName, path):
+        assert self.isRunning()
+        path = os.path.abspath(path)
+        cmd = '%s -p %s %s > %s' % (self.cmd('pg_dump'),
+                                    self.port, dbName,
+                                    path)
+        print >> sys.stderr, "DUMP: %r" % cmd
+        system(cmd)
+
+    def restore(self, dbName, path):
+        path = os.path.abspath(path)
+        if not os.path.isfile(path):
+            raise ValueError, "No such file %r" % path
+        assert self.isRunning()
+        t = time.time()
+        self.dropDB(dbName)
+        self.createDB(dbName)
+        cmd = '%s -q -p %s -f %s %s' % (self.cmd('psql'),
+                                     self.port, path,
+                                     dbName)
+        import popen2
+        p = popen2.Popen3(cmd)
+        p.wait()
+        print >> sys.stderr, "RESTORED %r in %r secs" % (
+            path, time.time()-t)
+
+    def getURI(self, dbName):
+        return 'postgres://localhost:%s/%s' % (self.port, dbName)
+
+    def dbExists(self, dbName):
+        return dbName in self.listDatabases()
+
+    def newConnection(self, dbName):
+        cs = "dbname='%s' host='%s' port='%i'" % (dbName, self.host, self.port)
+        return psycopg2.connect(cs)
+
+
+class PGDBScript(object):
+    """ Script to controll a postgresql server"""
+
+    dbName = None
+    scripts = ()
+
+    def __init__(self, dbDir=None, **kwargs):
+        self.srvArgs={}
+        kwargs.update(dict(dbDir=dbDir))
+        self._init(kwargs)
+
+    def _init(self, kwargs):
+        self.dbName = kwargs.pop('dbName', self.dbName)
+        self.scripts = kwargs.pop('scripts', self.scripts)
+        self.srvArgs.update(kwargs)
+
+    @property
+    def srv(self):
+        if not hasattr(self, '_srv'):
+            self._srv = Server(**self.srvArgs)
+        return self._srv
+
+    def _setup(self, runscripts=False):
+        self._checkListening()
+        self._checkDBName()
+        if not self.srv.dbExists(self.dbName):
+            self.srv.createDB(self.dbName)
+            runscripts = True
+        if runscripts and self.scripts:
+            self.srv.runScripts(self.dbName, self.scripts)
+
+    def runscripts(self):
+        self._setup(runscripts=True)
+
+    def start(self):
+        self._checkStopped()
+        if not os.path.exists(self.srvArgs.get('dbDir')):
+            self.srv.initDB()
+        self.srv.start()
+        if self.dbName is not None:
+            self._setup()
+
+    def _checkDBDir(self):
+        if self.srvArgs.get('dbDir') is None:
+            raise RuntimeError, "No db directory defined"
+
+    def _checkRunning(self):
+        self._checkDBDir()
+        if not self.srv.isRunning():
+            raise RuntimeError, "Postgres not runnng at %s:%s" % (
+                self.srvArgs.get('host'), self.srvArgs.get('port'))
+
+    def _checkListening(self):
+        if not self.srv.isListening():
+            raise RuntimeError, "No postgres listening on %s:%s" % (
+                self.srvArgs.get('host'), self.srvArgs.get('port'))
+
+    def _checkStopped(self):
+        if self.srv.isRunning():
+            raise RuntimeError, "Postgres already runnng at %s:%s" % (
+                self.srvArgs.get('host'), self.srvArgs.get('port'))
+
+    def _checkDBName(self):
+        if self.dbName is None:
+            raise RuntimeError, "No database name defined"
+
+    def stop(self):
+        self._checkRunning()
+        self.srv.stop()
+
+    def __call__(self, **kwargs):
+        self._init(kwargs)
+        parser = OptionParser(
+            usage="usage: %s [options] (start, stop, runscripts)" % sys.argv[0])
+        options, args = parser.parse_args()
+        if not len(args)==1 or args[0] not in ('start', 'stop', 'runscripts'):
+            parser.print_help()
+            sys.exit(1)
+        try:
+            getattr(self, args[0])()
+        except RuntimeError, e:
+            print str(e)
+            sys.exit(1)
+
+main = PGDBScript()
+
+
+class PGDatabaseLayer(object):
+
+    """A test layer which creates a database and starts a postgres
+    server"""
+
+    __bases__ = ()
+    dbDir = os.path.join(BASE, 'data')
+    setup = None
+    snapshotIdent = None
+    firstTest = True
+
+    def __init__(self, dbName, scripts=[], setup=None,
+                 snapshotIdent=None, verbose=False,
+                 port=15432, pgConfig='pg_config', postgresqlConf=None):
+        self.verbose = verbose
+        self.dbName = dbName
+        self.port = port
+        self.scripts = scripts
+        self.srvArgs = dict(verbose=verbose,
+                            port=self.port,
+                            dbDir=self.dbDir,
+                            pgConfig=pgConfig,
+                            postgresqlConf=postgresqlConf)
+        if setup is not None:
+            self.setup = setup
+            if snapshotIdent is None:
+                self.snapshotIdent = dotted_name(setup)
+            else:
+                self.snapshotIdent = snapshotIdent
+        self.__name__ = "%s_%s" % (self.__class__.__name__, dbName)
+
+    def _snapPath(self, ident):
+        # dbname does not matter here
+        digest = sha.new(str(self.scripts)).hexdigest()
+        return os.path.join(BASE, '%s_%s.sql' % (digest, ident))
+
+    @property
+    def srv(self):
+        if not hasattr(self, '_srv'):
+            self._srv = Server(**self.srvArgs)
+        return self._srv
+
+    def snapshotInfo(self, ident):
+        sp = self._snapPath(ident)
+        return os.path.isfile(sp), sp
+
+    def setUp(self):
+        if util.isUp('', self.port):
+            raise RuntimeError, "Port already listening: %r" % self.port
+        if not os.path.exists(self.dbDir):
+            self.srv.initDB()
+        self.srv.start()
+        exists, sp = self.snapshotInfo('__scripts__')
+        if exists:
+            if not self.srv.dbExists(self.dbName):
+                self.srv.createDB(self.dbName)
+            if self.setup is None:
+                self.srv.restore(self.dbName, sp)
+        else:
+            self.srv.dropDB(self.dbName)
+            self.srv.createDB(self.dbName)
+            if self.scripts:
+                self.srv.runScripts(self.dbName, self.scripts)
+            self.srv.dump(self.dbName, sp)
+        # create the snapshot for app
+        dirty = False
+        if self.setup is not None:
+            exists, sps = self.snapshotInfo(self.snapshotIdent)
+            if not exists:
+                self.setup(self)
+                self.srv.dump(self.dbName, sps)
+            else:
+                self.srv.restore(self.dbName, sps)
+
+    def testSetUp(self):
+        ident = self.snapshotIdent or '__scripts__'
+        if not self.firstTest:
+            # if we run the first time we ar clean
+            exists, sps = self.snapshotInfo(ident)
+            assert exists
+            self.srv.restore(self.dbName, sps)
+        self.firstTest = False
+
+    def testTearDown(self):
+        try:
+            transaction.abort()
+        except AttributeError:
+            # we have no connection anymore, ignore
+            # XXX how to reproduce?
+            pass
+
+    def tearDown(self):
+        self.firstTest = True
+        self.srv.stop()
+
+    def newConnection(self):
+        return self.srv.newConnection(self.dbName)
+
+    def storeURI(self):
+        return self.srv.getURI(self.dbName)
+
+
+class ExecuteSQL(object):
+
+    def __init__(self, stmt):
+        self.stmt = stmt
+        self.__name__ = self.__class__.__name__ + sha.new(str((
+            self.stmt))).hexdigest()
+
+    def __call__(self, layer):
+        conn = layer.newConnection()
+        cur = conn.cursor()
+        cur.execute(self.stmt)
+        conn.commit()
+        cur.close()
+        conn.close()

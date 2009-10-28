@@ -2,6 +2,14 @@
 Changes in lovely.testing
 =========================
 
+trunk
+=====
+
+ - added PGDatabaseLayer
+
+ - added pgsql config
+
+
 2009/10/14 0.1.0a1
 ==================
 

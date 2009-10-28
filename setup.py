@@ -54,5 +54,7 @@ setup(
     install_requires = ['setuptools',
                         'zope.testing',
                         'zc.buildout>=1.4',
+                        'transaction',
+                        'psycopg2',
                         ]
     )
