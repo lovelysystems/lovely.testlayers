@@ -5,6 +5,8 @@ Changes in lovely.testing
 trunk
 =====
 
+ - added coverage
+
  - added MySQLDatabaseLayer
 
  - added mysql server
