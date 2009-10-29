@@ -5,6 +5,9 @@ Changes in lovely.testing
 trunk
 =====
 
+2009/10/29 0.1.0a2
+==================
+
  - added coverage
 
  - added MySQLDatabaseLayer
