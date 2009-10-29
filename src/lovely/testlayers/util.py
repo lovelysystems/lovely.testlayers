@@ -1,3 +1,4 @@
+import os
 import socket
 
 def isUp(host, port):
@@ -8,3 +9,23 @@ def isUp(host, port):
         s.close()
         return True
     return False
+
+
+def dotted_name(obj):
+    return u'.'.join([obj.__module__ ,obj.__name__])
+
+
+def system(c):
+
+    """execute a system call and raise SystemError on failure
+
+    >>> system('ls')
+    >>> system('unknowncommand')
+    Traceback (most recent call last):
+    ...
+    SystemError: ('Failed', 'unknowncommand')
+
+    """
+
+    if os.system(c):
+        raise SystemError("Failed", c)

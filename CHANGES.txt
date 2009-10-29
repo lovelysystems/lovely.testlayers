@@ -5,9 +5,13 @@ Changes in lovely.testing
 trunk
 =====
 
+ - added MySQLDatabaseLayer
+
+ - added mysql server
+
  - added PGDatabaseLayer
 
- - added pgsql config
+ - added pgsql server
 
 
 2009/10/14 0.1.0a1

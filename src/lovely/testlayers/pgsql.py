@@ -21,36 +21,17 @@ import os
 import stat
 import sys
 import sha
-from optparse import OptionParser
 import tempfile
 import shutil
 import psycopg2
-import transaction
 from lovely.testlayers import util
+from lovely.testlayers import sql
 
-here = os.path.dirname(__file__)
 BASE = os.path.join(tempfile.gettempdir(), __name__)
+here = os.path.dirname(__file__)
 
 Q_PIDS="""select procpid from
 pg_stat_activity where datname='%s' and procpid <> pg_backend_pid();"""
-
-def dotted_name(obj):
-    return u'.'.join([obj.__module__ ,obj.__name__])
-
-def system(c):
-
-    """execute a system call and raise SystemError on failure
-
-    >>> system('ls')
-    >>> system('unknowncommand')
-    Traceback (most recent call last):
-    ...
-    SystemError: ('Failed', 'unknowncommand')
-
-    """
-
-    if os.system(c):
-        raise SystemError("Failed", c)
 
 
 class Server(object):
@@ -107,7 +88,7 @@ class Server(object):
     def createDB(self, dbName):
         cmd = '%s -q -p %s -h %s %s' % (self.cmd('createdb'),
                                         self.port, self.host, dbName)
-        system(cmd)
+        util.system(cmd)
 
     def disconnectAll(self, dbName):
         """disconnects all from this db"""
@@ -128,7 +109,7 @@ class Server(object):
         self.disconnectAll(dbName)
         cmd = '%s -q -p %s -h %s %s' % (self.cmd('dropdb'),
                                         self.port, self.host, dbName)
-        system(cmd)
+        util.system(cmd)
 
     def runScripts(self, dbName, scripts):
         """runs sql scripts from given paths"""
@@ -138,7 +119,7 @@ class Server(object):
                 output = ''
             else:
                 output = '>/dev/null 2>&1'
-            system('%s -q -f %s %s %s' % (
+            util.system('%s -q -f %s %s %s' % (
                                     self.psql, script, dbName, output))
 
     def _resolvePath(self, path):
@@ -157,7 +138,7 @@ class Server(object):
         cmd = '%s -A trust -D %s >/dev/null' % (self.cmd('initdb'),
                                                 self.dbDir)
         t = time.time()
-        system(cmd)
+        util.system(cmd)
         print >> sys.stderr, "INITDB: %r in %s secs" % (self.dbDir,
                                                         time.time()-t)
 
@@ -176,7 +157,7 @@ class Server(object):
         cmd = '%s -l "%s" -D %s %s' % (self.cmd('pg_ctl'),
                                        self.pgCtlLog,
                                        self.dbDir, arg)
-        system(cmd)
+        util.system(cmd)
 
     @property
     def pgCtlLog(self):
@@ -222,7 +203,7 @@ class Server(object):
                                     self.port, dbName,
                                     path)
         print >> sys.stderr, "DUMP: %r" % cmd
-        system(cmd)
+        util.system(cmd)
 
     def restore(self, dbName, path):
         path = os.path.abspath(path)
@@ -252,21 +233,8 @@ class Server(object):
         return psycopg2.connect(cs)
 
 
-class PGDBScript(object):
+class PGDBScript(sql.BaseSQLScript):
     """ Script to controll a postgresql server"""
-
-    dbName = None
-    scripts = ()
-
-    def __init__(self, dbDir=None, **kwargs):
-        self.srvArgs={}
-        kwargs.update(dict(dbDir=dbDir))
-        self._init(kwargs)
-
-    def _init(self, kwargs):
-        self.dbName = kwargs.pop('dbName', self.dbName)
-        self.scripts = kwargs.pop('scripts', self.scripts)
-        self.srvArgs.update(kwargs)
 
     @property
     def srv(self):
@@ -274,171 +242,33 @@ class PGDBScript(object):
             self._srv = Server(**self.srvArgs)
         return self._srv
 
-    def _setup(self, runscripts=False):
-        self._checkListening()
-        self._checkDBName()
-        if not self.srv.dbExists(self.dbName):
-            self.srv.createDB(self.dbName)
-            runscripts = True
-        if runscripts and self.scripts:
-            self.srv.runScripts(self.dbName, self.scripts)
-
-    def runscripts(self):
-        self._setup(runscripts=True)
-
-    def start(self):
-        self._checkStopped()
-        if not os.path.exists(self.srvArgs.get('dbDir')):
-            self.srv.initDB()
-        self.srv.start()
-        if self.dbName is not None:
-            self._setup()
-
-    def _checkDBDir(self):
-        if self.srvArgs.get('dbDir') is None:
-            raise RuntimeError, "No db directory defined"
-
-    def _checkRunning(self):
-        self._checkDBDir()
-        if not self.srv.isRunning():
-            raise RuntimeError, "Postgres not runnng at %s:%s" % (
-                self.srvArgs.get('host'), self.srvArgs.get('port'))
-
-    def _checkListening(self):
-        if not self.srv.isListening():
-            raise RuntimeError, "No postgres listening on %s:%s" % (
-                self.srvArgs.get('host'), self.srvArgs.get('port'))
-
-    def _checkStopped(self):
-        if self.srv.isRunning():
-            raise RuntimeError, "Postgres already runnng at %s:%s" % (
-                self.srvArgs.get('host'), self.srvArgs.get('port'))
-
-    def _checkDBName(self):
-        if self.dbName is None:
-            raise RuntimeError, "No database name defined"
-
-    def stop(self):
-        self._checkRunning()
-        self.srv.stop()
-
-    def __call__(self, **kwargs):
-        self._init(kwargs)
-        parser = OptionParser(
-            usage="usage: %s [options] (start, stop, runscripts)" % sys.argv[0])
-        options, args = parser.parse_args()
-        if not len(args)==1 or args[0] not in ('start', 'stop', 'runscripts'):
-            parser.print_help()
-            sys.exit(1)
-        try:
-            getattr(self, args[0])()
-        except RuntimeError, e:
-            print str(e)
-            sys.exit(1)
-
 main = PGDBScript()
 
 
-class PGDatabaseLayer(object):
+class PGDatabaseLayer(sql.BaseSQLLayer):
 
     """A test layer which creates a database and starts a postgres
     server"""
 
-    __bases__ = ()
-    dbDir = os.path.join(BASE, 'data')
-    setup = None
-    snapshotIdent = None
-    firstTest = True
 
     def __init__(self, dbName, scripts=[], setup=None,
                  snapshotIdent=None, verbose=False,
                  port=15432, pgConfig='pg_config', postgresqlConf=None):
+        self.dbDir = os.path.join(BASE, 'data')
+        super(PGDatabaseLayer, self).__init__(dbName, scripts, setup, snapshotIdent)
         self.verbose = verbose
-        self.dbName = dbName
         self.port = port
-        self.scripts = scripts
         self.srvArgs = dict(verbose=verbose,
                             port=self.port,
                             dbDir=self.dbDir,
                             pgConfig=pgConfig,
                             postgresqlConf=postgresqlConf)
-        if setup is not None:
-            self.setup = setup
-            if snapshotIdent is None:
-                self.snapshotIdent = dotted_name(setup)
-            else:
-                self.snapshotIdent = snapshotIdent
-        self.__name__ = "%s_%s" % (self.__class__.__name__, dbName)
-
-    def _snapPath(self, ident):
-        # dbname does not matter here
-        digest = sha.new(str(self.scripts)).hexdigest()
-        return os.path.join(BASE, '%s_%s.sql' % (digest, ident))
 
     @property
     def srv(self):
         if not hasattr(self, '_srv'):
             self._srv = Server(**self.srvArgs)
         return self._srv
-
-    def snapshotInfo(self, ident):
-        sp = self._snapPath(ident)
-        return os.path.isfile(sp), sp
-
-    def setUp(self):
-        if util.isUp('', self.port):
-            raise RuntimeError, "Port already listening: %r" % self.port
-        if not os.path.exists(self.dbDir):
-            self.srv.initDB()
-        self.srv.start()
-        exists, sp = self.snapshotInfo('__scripts__')
-        if exists:
-            if not self.srv.dbExists(self.dbName):
-                self.srv.createDB(self.dbName)
-            if self.setup is None:
-                self.srv.restore(self.dbName, sp)
-        else:
-            self.srv.dropDB(self.dbName)
-            self.srv.createDB(self.dbName)
-            if self.scripts:
-                self.srv.runScripts(self.dbName, self.scripts)
-            self.srv.dump(self.dbName, sp)
-        # create the snapshot for app
-        dirty = False
-        if self.setup is not None:
-            exists, sps = self.snapshotInfo(self.snapshotIdent)
-            if not exists:
-                self.setup(self)
-                self.srv.dump(self.dbName, sps)
-            else:
-                self.srv.restore(self.dbName, sps)
-
-    def testSetUp(self):
-        ident = self.snapshotIdent or '__scripts__'
-        if not self.firstTest:
-            # if we run the first time we ar clean
-            exists, sps = self.snapshotInfo(ident)
-            assert exists
-            self.srv.restore(self.dbName, sps)
-        self.firstTest = False
-
-    def testTearDown(self):
-        try:
-            transaction.abort()
-        except AttributeError:
-            # we have no connection anymore, ignore
-            # XXX how to reproduce?
-            pass
-
-    def tearDown(self):
-        self.firstTest = True
-        self.srv.stop()
-
-    def newConnection(self):
-        return self.srv.newConnection(self.dbName)
-
-    def storeURI(self):
-        return self.srv.getURI(self.dbName)
 
 
 class ExecuteSQL(object):

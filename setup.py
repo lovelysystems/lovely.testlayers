@@ -56,5 +56,6 @@ setup(
                         'zc.buildout>=1.4',
                         'transaction',
                         'psycopg2',
+                        'MySQL-python',
                         ]
     )
