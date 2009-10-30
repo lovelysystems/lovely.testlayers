@@ -2,8 +2,8 @@
 Changes in lovely.testing
 =========================
 
-trunk
-=====
+2009/10/30 0.1.0a3
+==================
 
  - the postgres and mysql client libs are now only defined as extra
    dependencies, so installation of this package is also possible
