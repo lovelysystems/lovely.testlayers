@@ -1,0 +1,133 @@
+================
+Nginx test layer
+================
+
+This test layer starts and stops an nginx server.
+
+The layer is constructed with the optional path to the nginx command
+and a prefix directory for nginx to run. To demonstrate this, we
+create a temporary nginx home, where nginx should run.
+
+    >>> import tempfile, shutil, os
+    >>> tmp = tempfile.mkdtemp()
+    >>> nginx_prefix = os.path.join(tmp, 'nginx_home')
+    >>> os.mkdir(nginx_prefix)
+
+We have to add a config file at the default location. Let us define a
+minimal configuration file.
+
+    >>> os.mkdir(os.path.join(nginx_prefix, 'conf'))
+    >>> cfg = file(os.path.join(nginx_prefix, 'conf', 'nginx.conf'), 'w')
+    >>> cfg.write("""
+    ... events {
+    ...     worker_connections  10;
+    ... }
+    ... http {
+    ...     server {
+    ...       listen 127.0.0.1:12345;
+    ...     }
+    ... }""")
+    >>> cfg.close()
+
+And the log directory.
+
+    >>> os.mkdir(os.path.join(nginx_prefix, 'logs'))
+
+Let us also define the nginx executable. There is already one
+installed via buildout in the root directory of this package, so we
+get the path to this executable. Using a special nginx that is built
+via buildout is the common way to use this layer. This way the same
+nginx might be used for local development with the configuration
+defined by the buildout.
+
+    >>> nginx_cmd = os.path.join(os.path.dirname(os.path.dirname(
+    ...     os.path.dirname(os.path.dirname(os.path.abspath(__file__))))),
+    ...                          'parts', 'nginx', 'sbin', 'nginx')
+
+
+Now we can instantiate the layer.
+
+    >>> from lovely.testlayers import nginx
+    >>> nl = nginx.NginxLayer('nl', nginx_prefix, nginx_cmd=nginx_cmd)
+
+Upon layer setup the server gets started.
+
+    >>> nl.setUp()
+
+We can now issue requests, we will get a 404 because we didn't setup
+any urls, but for testing this is ok.
+
+    >>> import urllib2
+    >>> urllib2.urlopen('http://localhost:12345/', None, 1)
+    Traceback (most recent call last):
+    ...
+    HTTPError: HTTP Error 404: Not Found
+
+Upon layer tearDown the server gets stopped.
+
+    >>> nl.tearDown()
+
+We cannot connect to the server anymore now.
+
+    >>> urllib2.urlopen('http://localhost:12345/', None, 1)
+    Traceback (most recent call last):
+    ...
+    URLError: <urlopen error [Errno 61] Connection refused>
+
+Failures
+========
+
+Startup and shutdown failures are also catched. For example if we try
+to tear down the layer twice.
+
+    >>> nl.tearDown()
+    Traceback (most recent call last):
+    ...
+    RuntimeError: Nginx stop failed ...nginx.pid" failed
+     (2: No such file or directory)
+
+Or if we try to start the server twice.
+
+    >>> nl.setUp()
+    >>> nl.setUp()
+    Traceback (most recent call last):
+    ...
+    RuntimeError: Nginx start failed [emerg]:
+     bind() to 127.0.0.1:12345 failed (48: Address already in use)
+    ...
+    [emerg]: still could not bind()
+
+    >>> nl.tearDown()
+
+Cleanup the temporary directory, we don't need it for testing from
+this point.
+
+    >>> shutil.rmtree(tmp)
+
+Nearly all failures should be catched upon initialization, because the
+layer does a config check then.
+
+Let us provide a non existing prefix path.
+
+    >>> nginx.NginxLayer('nl', 'something')
+    Traceback (most recent call last):
+    ...
+    AssertionError: prefix not a directory '.../something/'
+
+Or a not existing nginx_cmd.
+
+    >>> nginx.NginxLayer('nl', '.', 'not-an-nginx')
+    Traceback (most recent call last):
+    ...
+    RuntimeError: Nginx check failed /bin/sh: not-an-nginx: command not found
+
+Or some missing aka broken configuration. We just provide our working
+directory as the prefix, which actually does not contain any configs.
+
+    >>> nginx.NginxLayer('nl', '.', nginx_cmd)
+    Traceback (most recent call last):
+    RuntimeError: Nginx check failed nginx version: nginx/...
+    [alert]: could not open error log file...
+    ... [emerg] ...
+    configuration file .../conf/nginx.conf test failed
+

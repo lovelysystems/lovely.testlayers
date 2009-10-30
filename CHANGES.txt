@@ -5,6 +5,8 @@ Changes in lovely.testing
 trunk
 =====
 
+ - added nginx layer see nginx.txt
+
 2009/10/29 0.1.0a2
 ==================
 

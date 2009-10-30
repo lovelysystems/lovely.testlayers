@@ -43,9 +43,13 @@ def test_suite():
         DocFileSuite('mysql.txt',
                      optionflags=doctest.NORMALIZE_WHITESPACE|doctest.ELLIPSIS,
                      ),
+        DocFileSuite('nginx.txt',
+                     optionflags=doctest.NORMALIZE_WHITESPACE|doctest.ELLIPSIS,
+                     ),
         )
     # the cassandra test needs an internet connection for downloading cassandra
-    suites[2].level=2
+    suites[2].level=3
+
     return unittest.TestSuite(suites)
 
 if __name__ == '__main__':

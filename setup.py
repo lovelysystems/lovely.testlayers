@@ -30,6 +30,8 @@ long_description=(
         + '\n' +
         read('src', 'lovely', 'testlayers', 'memcached.txt')
         + '\n' +
+        read('src', 'lovely', 'testlayers', 'nginx.txt')
+        + '\n' +
         read('src', 'lovely', 'testlayers', 'cass.txt')
         + '\n'
         )
@@ -51,11 +53,12 @@ setup(
     url = 'http://code.google.com/p/lovely-testlayers/',
     include_package_data = True,
     namespace_packages = ['lovely'],
+    extras_require = dict(
+        mysql=['MySQL-python'],
+        pgsql=['psycopg2']),
     install_requires = ['setuptools',
                         'zope.testing',
                         'zc.buildout>=1.4',
                         'transaction',
-                        'psycopg2',
-                        'MySQL-python',
                         ]
     )
