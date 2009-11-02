@@ -33,6 +33,10 @@ long_description=(
         read('src', 'lovely', 'testlayers', 'nginx.txt')
         + '\n' +
         read('src', 'lovely', 'testlayers', 'cass.txt')
+        + '\n' +
+        read('src', 'lovely', 'testlayers', 'mysql.txt')
+        + '\n' +
+        read('src', 'lovely', 'testlayers', 'pgsql.txt')
         + '\n'
         )
 
@@ -40,7 +44,7 @@ open('doc.txt', 'w').write(long_description)
 
 setup(
     name = 'lovely.testlayers',
-    version = '0.1.0a3',
+    version = '0.1.0a4',
     description="Testing Layers for use with zope.testing",
     long_description=long_description,
     packages = find_packages('src'),
