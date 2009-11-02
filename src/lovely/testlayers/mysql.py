@@ -55,12 +55,12 @@ class Server(object):
 
     @property
     def mysql(self):
-        cmd = "%s --user=root --port=%i --host=%s --protocol=tcp "
+        cmd = "%s --user=root --port=%i --host=%s --protocol=tcp -s "
         return cmd % (self.cmd('mysql'), self.port, self.host)
 
     @property
     def mysqladmin(self):
-        cmd = "%s --user=root --port=%i --host=%s --protocol=tcp "
+        cmd = "%s --user=root --port=%i --host=%s --protocol=tcp -s "
         return cmd % (self.cmd('mysqladmin'), self.port, self.host)
 
     @property
@@ -86,16 +86,25 @@ class Server(object):
             util.system(cmd)
 
     def initDB(self):
+        if not os.path.exists(self.dbDir):
+            os.makedirs(self.dbDir)
         cmd = "%s --ldata=%s" % (self.cmd('mysql_install_db'), self.dbDir)
         t = time.time()
         util.system(cmd)
         print >> sys.stderr, "INITDB: %r in %s secs" % (self.dbDir,
                                                         time.time()-t)
 
-    def start(self):
+    def mysqld_path(self):
         f = os.popen('locate -l1 "*\/mysqld"')
         daemon_path = f.read().strip()
         f.close()
+        return daemon_path
+
+    def start(self):
+
+        daemon_path = self.mysqld_path()
+        if not daemon_path:
+            raise IOError, "mysqld was not found. Is a MySQL server installed?"
 
         cmd = "%s --no-defaults --datadir=%s --port=%i --pid-file=%s/mysql.pid --socket=%s/mysql.sock & > /dev/null 2>&1 " % (daemon_path, self.dbDir, self.port, self.dbDir, self.dbDir)
         util.system(cmd)
@@ -190,9 +199,14 @@ class MySQLDatabaseLayer(sql.BaseSQLLayer):
                  snapshotIdent=None, port=16543):
         super(MySQLDatabaseLayer, self).__init__(dbName, scripts, setup,
                                                  snapshotIdent)
+        self.dbDir = os.path.join(self.base_path, 'data')
         self.port = port
         self.srvArgs = dict(port=self.port,
                             dbDir=self.dbDir)
+
+    @property
+    def base_path(self):
+        return BASE
 
     @property
     def srv(self):

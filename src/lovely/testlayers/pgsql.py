@@ -135,6 +135,8 @@ class Server(object):
         return os.path.join(base, path)
 
     def initDB(self):
+#         if not os.path.exists(self.dbDir):
+#             os.makedirs(self.dbDir)
         cmd = '%s -A trust -D %s >/dev/null' % (self.cmd('initdb'),
                                                 self.dbDir)
         t = time.time()
@@ -254,8 +256,7 @@ class PGDatabaseLayer(sql.BaseSQLLayer):
     def __init__(self, dbName, scripts=[], setup=None,
                  snapshotIdent=None, verbose=False,
                  port=15432, pgConfig='pg_config', postgresqlConf=None):
-        self.dbDir = os.path.join(BASE, 'data')
-        super(PGDatabaseLayer, self).__init__(dbName, scripts, setup, snapshotIdent)
+        self.dbDir = os.path.join(self.base_path, 'data')
         self.verbose = verbose
         self.port = port
         self.srvArgs = dict(verbose=verbose,
@@ -263,6 +264,11 @@ class PGDatabaseLayer(sql.BaseSQLLayer):
                             dbDir=self.dbDir,
                             pgConfig=pgConfig,
                             postgresqlConf=postgresqlConf)
+        super(PGDatabaseLayer, self).__init__(dbName, scripts, setup, snapshotIdent)
+
+    @property
+    def base_path(self):
+        return BASE
 
     @property
     def srv(self):

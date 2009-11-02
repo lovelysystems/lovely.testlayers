@@ -55,10 +55,10 @@ setup(
     namespace_packages = ['lovely'],
     extras_require = dict(
         mysql=['MySQL-python'],
-        pgsql=['psycopg2']),
+        pgsql=['psycopg2',
+               'transaction']),
     install_requires = ['setuptools',
                         'zope.testing',
                         'zc.buildout>=1.4',
-                        'transaction',
                         ]
     )

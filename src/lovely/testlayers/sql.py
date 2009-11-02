@@ -25,7 +25,7 @@ from optparse import OptionParser
 from lovely.testlayers import util
 
 
-BASE = os.path.join(tempfile.gettempdir(), __name__)
+#BASE = os.path.join(tempfile.gettempdir(), __name__)
 
 class BaseSQLScript(object):
     """Base script to controll a sql server"""
@@ -114,7 +114,6 @@ class BaseSQLLayer(object):
     """A test layer which creates a database and starts a sql server"""
 
     __bases__ = ()
-    dbDir = os.path.join(BASE, 'data')
     setup = None
     snapshotIdent = None
     firstTest = True
@@ -133,7 +132,7 @@ class BaseSQLLayer(object):
     def _snapPath(self, ident):
         # dbname does not matter here
         digest = sha.new(str(self.scripts)).hexdigest()
-        return os.path.join(BASE, '%s_%s.sql' % (digest, ident))
+        return os.path.join(self.base_path, '%s_%s.sql' % (digest, ident))
 
     @property
     def srv(self):

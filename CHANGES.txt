@@ -2,6 +2,13 @@
 Changes in lovely.testing
 =========================
 
+ - raising a proper exception if mysqld was not found (fixes #3)
+
+ - moved dependency for 'transaction' to extras[pgsql] (fixes #2)
+
+ - fixed wrong path for dump databases in layer. (fixes #1)
+
+
 2009/10/30 0.1.0a3
 ==================
 
