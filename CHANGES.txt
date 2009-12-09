@@ -2,8 +2,8 @@
 Changes in lovely.testing
 =========================
 
-unreleased
-==========
+2009/12/09 0.1.0a5
+==================
 
  - factored out the server part of the memcached layer, this could now
    be used for any server implementations, see ``memcached.py`` as an
