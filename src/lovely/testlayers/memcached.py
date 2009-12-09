@@ -15,13 +15,10 @@
 # limitations under the License.
 #
 ##############################################################################
+from lovely.testlayers.server import ServerLayer
 
-import os
-import telnetlib
-import time
-import socket
 
-class MemcachedLayer(object):
+class MemcachedLayer(ServerLayer):
 
     """A layer that starts and stops memcached, the memcached
     executable needs to be in the path"""
@@ -29,31 +26,11 @@ class MemcachedLayer(object):
     __bases__ = ()
 
     def __init__(self, name, port=11222, connections=10):
-        # we assume the parts are in our parent dir
-        self.__name__ = name
         self.port = port
-        self.connections = connections
-        self.executable = 'memcached'
-
-    def setUp(self):
-        self.pid = os.spawnlp(os.P_NOWAIT, self.executable, self.executable,
-                              '-p', str(self.port),
-                              '-c', str(self.connections))
-        while True:
-            try:
-                tn =  telnetlib.Telnet('localhost', self.port)
-                tn.close()
-                break
-            except socket.error, e:
-                time.sleep(0.5)
+        start_cmd = 'memcached -p %s -c %s' % (self.port, connections)
+        super(MemcachedLayer, self).__init__(
+            name, servers=['localhost:%s' % port],
+            start_cmd=start_cmd)
 
 
-    def tearDown(self):
-        os.kill(self.pid, 15)
-        while True:
-            try:
-                tn =  telnetlib.Telnet('localhost', self.port)
-                tn.close()
-            except socket.error, e:
-                break
-            time.sleep(0.5)
+
