@@ -74,6 +74,27 @@ We cannot connect to the server anymore now.
     ...
     URLError: <urlopen error [Errno 61] Connection refused>
 
+The configuration can be located at a different location than nginx' default
+location (<prefix>/conf/nginx.conf):
+
+    >>> shutil.copytree(nginx_prefix, nginx_prefix + "2")
+
+    >>> cfg_file = tempfile.mktemp()
+    >>> cfg = file(cfg_file, 'w')
+    >>> cfg.write("""
+    ... events {
+    ...     worker_connections  10;
+    ... }
+    ... http {
+    ...     server {
+    ...       listen 127.0.0.1:23456;
+    ...     }
+    ... }""")
+    >>> cfg.close()
+
+    >>> nginx.NginxLayer('nl', nginx_prefix+"2", nginx_cmd, cfg_file)
+    <lovely.testlayers.nginx.NginxLayer object at 0x...>
+
 Failures
 ========
 

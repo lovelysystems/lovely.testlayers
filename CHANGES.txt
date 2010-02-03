@@ -2,12 +2,23 @@
 Changes in lovely.testing
 =========================
 
+trunk
+=====
+
+2010/02/03 0.1.0a6
+==================
+
+ - added additional argument to set nginx configuration file. usefull if
+   desired config is not located under given prefix
+
+
 2009/12/09 0.1.0a5
 ==================
 
  - factored out the server part of the memcached layer, this could now
    be used for any server implementations, see ``memcached.py`` as an
    example how to use it.
+
 
 2009/11/02 0.1.0a4
 ==================
@@ -27,6 +38,7 @@ Changes in lovely.testing
    without having those libs available
 
  - added nginx layer see nginx.txt
+
 
 2009/10/29 0.1.0a2
 ==================

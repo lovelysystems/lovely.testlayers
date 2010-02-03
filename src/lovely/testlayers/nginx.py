@@ -25,16 +25,20 @@ class NginxLayer(object):
 
     __bases__ = ()
 
-    def __init__(self, name, prefix, nginx_cmd='nginx'):
+    def __init__(self, name, prefix, nginx_cmd='nginx', nginx_conf=None):
         self.__name__ = name
         self.nginx_cmd = nginx_cmd
+        self.nginx_conf = nginx_conf
         # we need to add the slash to the prefix because nginx needs it
         self.prefix = os.path.abspath(prefix) + '/'
         assert os.path.isdir(self.prefix), 'prefix not a directory %r' % self.prefix
         self.nginx_version = self._check_config()
 
     def _nginx_cmd(self, *args):
-        return ' '.join([self.nginx_cmd, '-p', self.prefix] +  list(args))
+        opt_args = list(args)
+        if self.nginx_conf:
+            opt_args.append('-c %s' %self.nginx_conf)
+        return ' '.join([self.nginx_cmd, '-p', self.prefix] +  opt_args)
 
     def _check_config(self):
         cmd = self._nginx_cmd('-v', '-t')
