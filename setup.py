@@ -44,7 +44,7 @@ open('doc.txt', 'w').write(long_description)
 
 setup(
     name = 'lovely.testlayers',
-    version = '0.1.0a6',
+    version = '0.1.0a7',
     description="Testing Layers for use with zope.testing",
     long_description=long_description,
     packages = find_packages('src'),
