@@ -5,6 +5,9 @@ Changes in lovely.testing
 trunk
 =====
 
+ - made mysql layer aware to handle multiple instances of mysqld in parallel
+
+
 2010/02/03 0.1.0a6
 ==================
 

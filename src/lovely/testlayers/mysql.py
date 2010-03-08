@@ -199,7 +199,7 @@ class MySQLDatabaseLayer(sql.BaseSQLLayer):
                  snapshotIdent=None, port=16543):
         super(MySQLDatabaseLayer, self).__init__(dbName, scripts, setup,
                                                  snapshotIdent)
-        self.dbDir = os.path.join(self.base_path, 'data')
+        self.dbDir = os.path.join(self.base_path, 'data' + str(port))
         self.port = port
         self.srvArgs = dict(port=self.port,
                             dbDir=self.dbDir)
