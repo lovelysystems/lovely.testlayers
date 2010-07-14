@@ -59,8 +59,8 @@ class ServerLayer(object):
                 *server), 'Port already listening %s:%s' % server
         self.process = self.start()
         to_start = deque(self.servers)
-        time.sleep(0.05)
         while to_start:
+            time.sleep(0.05)
             server = to_start.popleft()
             if not util.isUp(*server):
                 logging.info('Server not up %s:%s', *server)

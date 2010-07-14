@@ -18,7 +18,7 @@
 
 import sys
 import os
-import sha
+import hashlib
 import time
 import tempfile
 import _mysql
@@ -219,8 +219,8 @@ class ExecuteSQL(object):
 
     def __init__(self, stmt):
         self.stmt = stmt
-        self.__name__ = self.__class__.__name__ + sha.new(str((
-            self.stmt))).hexdigest()
+        self.__name__ = self.__class__.__name__ + hashlib.sha1(str(
+            self.stmt)).hexdigest()
 
     def __call__(self, layer):
         conn = layer.newConnection()

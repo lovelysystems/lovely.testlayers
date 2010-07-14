@@ -18,7 +18,7 @@
 
 import os
 import sys
-import sha
+import hashlib
 import tempfile
 import transaction
 from optparse import OptionParser
@@ -131,7 +131,7 @@ class BaseSQLLayer(object):
 
     def _snapPath(self, ident):
         # dbname does not matter here
-        digest = sha.new(str(self.scripts)).hexdigest()
+        digest = hashlib.sha1(str(self.scripts)).hexdigest()
         return os.path.join(self.base_path, '%s_%s.sql' % (digest, ident))
 
     @property

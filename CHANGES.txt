@@ -2,8 +2,13 @@
 Changes in lovely.testing
 =========================
 
-trunk
-=====
+2010/07/14 0.1.0
+================
+
+ - fix wait interval in isUp check in server layer
+
+ - use hashlib instead of sha, to avoid deprecation warnings. Only
+   works with python >= 2.5
 
 2010/03/08 0.1.0a7
 ==================

@@ -20,7 +20,7 @@ import time
 import os
 import stat
 import sys
-import sha
+import hashlib
 import tempfile
 import shutil
 import psycopg2
@@ -281,8 +281,8 @@ class ExecuteSQL(object):
 
     def __init__(self, stmt):
         self.stmt = stmt
-        self.__name__ = self.__class__.__name__ + sha.new(str((
-            self.stmt))).hexdigest()
+        self.__name__ = self.__class__.__name__ + hashlib.sha1(str(
+            self.stmt)).hexdigest()
 
     def __call__(self, layer):
         conn = layer.newConnection()
