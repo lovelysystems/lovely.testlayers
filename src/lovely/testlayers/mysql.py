@@ -31,23 +31,27 @@ BASE = os.path.join(tempfile.gettempdir(), __name__)
 class Server(object):
     """ Class to control a mysql server"""
 
-    def __init__(self, dbDir=None, host='127.0.0.1', port=6543):
+    def __init__(self, dbDir=None, host='127.0.0.1', port=6543,
+                 mysql_bin_dir=None):
         self.port = port
         self.host = host
         self.dbDir = dbDir
 
         self.cmd_post_fix = ''
-        f = os.popen('which "mysql"')
-        mysql_path = f.read().strip()
-        f.close()
-        if not mysql_path:
-            f = os.popen('which "mysql5"')
+        if not mysql_bin_dir:
+            f = os.popen('which "mysql"')
             mysql_path = f.read().strip()
             f.close()
-            self.cmd_post_fix = '5'
             if not mysql_path:
-                raise ValueError, "Neither mysql nor mysql5 was found"
-        self.bin_dir = os.path.dirname(mysql_path)
+                f = os.popen('which "mysql5"')
+                mysql_path = f.read().strip()
+                f.close()
+                self.cmd_post_fix = '5'
+                if not mysql_path:
+                    raise ValueError, "Neither mysql nor mysql5 was found"
+            self.bin_dir = os.path.dirname(mysql_path)
+        else:
+            self.bin_dir = mysql_bin_dir
 
     def cmd(self, name, use_post_fix=True):
         name = name + (use_post_fix and self.cmd_post_fix)
@@ -196,13 +200,15 @@ class MySQLDatabaseLayer(sql.BaseSQLLayer):
 
 
     def __init__(self, dbName, scripts=[], setup=None,
-                 snapshotIdent=None, port=16543):
+                 snapshotIdent=None, port=16543,
+                 mysql_bin_dir=None):
         super(MySQLDatabaseLayer, self).__init__(dbName, scripts, setup,
                                                  snapshotIdent)
         self.dbDir = os.path.join(self.base_path, 'data' + str(port))
         self.port = port
         self.srvArgs = dict(port=self.port,
-                            dbDir=self.dbDir)
+                            dbDir=self.dbDir,
+                            mysql_bin_dir=mysql_bin_dir)
 
     @property
     def base_path(self):

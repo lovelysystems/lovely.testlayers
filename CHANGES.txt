@@ -2,6 +2,11 @@
 Changes in lovely.testing
 =========================
 
+unreleased
+==========
+
+ - allow setting the mysql_bin_dir in layer and server
+
 2010/07/14 0.1.0
 ================
 
