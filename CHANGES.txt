@@ -2,6 +2,11 @@
 Changes in lovely.testing
 =========================
 
+unreleased
+==========
+
+ - look form mysqld in relative libexec dir in mysql layer
+
 2010/10/22 0.1.1
 ================
 

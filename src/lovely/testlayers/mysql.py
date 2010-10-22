@@ -99,9 +99,14 @@ class Server(object):
                                                         time.time()-t)
 
     def mysqld_path(self):
-        f = os.popen('locate -l1 "*\/mysqld"')
-        daemon_path = f.read().strip()
-        f.close()
+        # search for relative libexec
+        daemon_path = os.path.join(os.path.dirname(self.bin_dir),
+                                   'libexec', 'mysqld')
+        if not os.path.exists(daemon_path):
+            # look for the next available mysqld
+            f = os.popen('locate -l1 "*\/mysqld"')
+            daemon_path = f.read().strip()
+            f.close()
         return daemon_path
 
     def start(self):
