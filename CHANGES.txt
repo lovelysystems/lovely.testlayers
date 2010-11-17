@@ -2,6 +2,12 @@
 Changes in lovely.testing
 =========================
 
+unreleased
+==========
+
+ - do not pipe stderr in base server layer to prevent overflow because
+   it never gets read
+
 2010/10/22 0.1.2
 ================
 

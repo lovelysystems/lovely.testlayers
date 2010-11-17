@@ -39,14 +39,9 @@ class ServerLayer(object):
             self.servers.append((host, int(port)))
 
     def start(self):
-        raise NotImplementedError
-
-    def start(self):
         assert self.start_cmd, 'No start command defined'
         logging.info('Starting server %r', self.start_cmd)
-        return subprocess.Popen(self.start_cmd,
-                                shell=True,
-                                stderr=subprocess.PIPE)
+        return subprocess.Popen(self.start_cmd, shell=True)
 
     def stop(self):
         self.process.kill()
