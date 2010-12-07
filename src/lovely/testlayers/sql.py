@@ -20,10 +20,13 @@ import os
 import sys
 import hashlib
 import tempfile
-import transaction
 from optparse import OptionParser
 from lovely.testlayers import util
 
+try:
+    import transaction
+except ImportError:
+    transaction = None
 
 #BASE = os.path.join(tempfile.gettempdir(), __name__)
 
@@ -180,12 +183,13 @@ class BaseSQLLayer(object):
         self.firstTest = False
 
     def testTearDown(self):
-        try:
-            transaction.abort()
-        except AttributeError:
-            # we have no connection anymore, ignore
-            # XXX how to reproduce?
-            pass
+        if transaction is not None:
+            try:
+                transaction.abort()
+            except AttributeError:
+                # we have no connection anymore, ignore
+                # XXX how to reproduce?
+                pass
 
     def tearDown(self):
         self.firstTest = True

@@ -5,6 +5,8 @@ Changes in lovely.testing
 unreleased
 ==========
 
+ - removed dependency to ``transaction``
+
  - do not pipe stderr in base server layer to prevent overflow because
    it never gets read
 
