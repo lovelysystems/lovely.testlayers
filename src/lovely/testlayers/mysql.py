@@ -28,7 +28,7 @@ from lovely.testlayers import sql
 
 BASE = os.path.join(tempfile.gettempdir(), __name__)
 
-class Server(object):
+class Server(sql.ServerBase):
     """ Class to control a mysql server"""
 
     def __init__(self, dbDir=None, host='127.0.0.1', port=6543,
@@ -90,7 +90,7 @@ class Server(object):
     def runScripts(self, dbName, scripts):
         """runs sql scripts from given paths"""
         for script in scripts:
-            script = os.path.abspath(script)
+            script = self.resolveScriptPath(script)
             cmd = "%s %s < %s" % (self.mysql, dbName, script)
             util.system(cmd)
 
@@ -115,7 +115,6 @@ class Server(object):
         return daemon_path
 
     def start(self):
-
         daemon_path = self.mysqld_path()
         if not daemon_path:
             raise IOError, "mysqld was not found. Is a MySQL server installed?"
@@ -126,13 +125,13 @@ class Server(object):
         cmd = "%s %s --datadir=%s --port=%i --pid-file=%s/mysql.pid --socket=%s/mysql.sock & > /dev/null 2>&1 " % (daemon_path, defaults, self.dbDir, self.port, self.dbDir, self.dbDir)
         util.system(cmd)
         while not self.isRunning():
-            time.sleep(1)
+            time.sleep(0.1)
 
     def stop(self):
         cmd = "%s shutdown > /dev/null 2>&1" % self.mysqladmin
         util.system(cmd)
         while self.isRunning():
-            time.sleep(1)
+            time.sleep(0.3)
 
     def isRunning(self):
         cmd = "%s ping" % self.mysqladmin
@@ -142,9 +141,6 @@ class Server(object):
         i.close()
         e.close()
         return 'alive' in res
-
-    def isListening(self):
-        return self.isRunning()
 
     def listDatabases(self):
         cmd = "%s -e 'SHOW DATABASES'" % self.mysql
@@ -185,9 +181,6 @@ class Server(object):
     def getURI(self, dbName):
         return 'mysql://localhost:%s/%s' % (self.port, dbName)
 
-    def dbExists(self, dbName):
-        return dbName in self.listDatabases()
-
     def newConnection(self, dbName):
         c = _mysql.connect(host=self.host, port=self.port,
                            user='root', db=dbName)
@@ -195,46 +188,39 @@ class Server(object):
 
 
 class MySQLDBScript(sql.BaseSQLScript):
-    """ Script to controll a postgresql server"""
+    """ Script to controll a mysql server"""
 
-    @property
-    def srv(self):
-        if not hasattr(self, '_srv'):
-            self._srv = Server(**self.srvArgs)
-        return self._srv
+    server_impl = Server
 
 main = MySQLDBScript()
 
 
 class MySQLDatabaseLayer(sql.BaseSQLLayer):
 
-    """A test layer which creates a database and starts a postgres
-    server"""
+    """A test layer which creates a database and starts a mysql server"""
 
+    server_impl = Server
 
     def __init__(self, dbName, scripts=[], setup=None,
                  snapshotIdent=None, port=16543,
                  mysql_bin_dir=None, defaults_file=None):
 
-        super(MySQLDatabaseLayer, self).__init__(dbName, scripts, setup,
-                                                 snapshotIdent)
-
-        self.dbDir = os.path.join(self.base_path, 'data' + str(port))
         self.port = port
+        self.dbDir = os.path.join(self.base_path, 'data' + str(port))
         self.srvArgs = dict(port=self.port,
                             dbDir=self.dbDir,
                             defaults_file=defaults_file,
                             mysql_bin_dir=mysql_bin_dir)
 
+        super(MySQLDatabaseLayer, self).__init__(dbName, scripts, setup,
+                                                 snapshotIdent)
+
+
+
+
     @property
     def base_path(self):
         return BASE
-
-    @property
-    def srv(self):
-        if not hasattr(self, '_srv'):
-            self._srv = Server(**self.srvArgs)
-        return self._srv
 
 
 class ExecuteSQL(object):

@@ -5,6 +5,12 @@ Change History
 unreleased
 ==========
 
+ - reduced start/stop wait times in mysql layer
+
+ - use modification times in layer sql script change checking
+   additionally to the paths. this way the test dump is only used if
+   the sql scripts have not been modified since the last test run.
+
  - stop sql servers when runscripts fails in layer setup because
    otherwise the server still runs after the testrunner exited.
 

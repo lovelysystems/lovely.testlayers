@@ -28,7 +28,32 @@ try:
 except ImportError:
     transaction = None
 
-class BaseSQLScript(object):
+
+class ServerBase(object):
+
+    """Base class for abstracting sql servers"""
+
+    def resolveScriptPath(self, path):
+        return os.path.abspath(path)
+
+    def dbExists(self, dbName):
+        return dbName in self.listDatabases()
+
+    def isListening(self):
+        return self.isRunning()
+
+class ServerGetterMixin(object):
+
+    server_impl = None
+
+    @property
+    def srv(self):
+        assert self.server_impl, "No server implementation specified"
+        if not hasattr(self, '_srv'):
+            self._srv = self.server_impl(**self.srvArgs)
+        return self._srv
+
+class BaseSQLScript(ServerGetterMixin):
     """Base script to controll a sql server"""
 
     dbName = None
@@ -43,10 +68,6 @@ class BaseSQLScript(object):
         self.dbName = kwargs.pop('dbName', self.dbName)
         self.scripts = kwargs.pop('scripts', self.scripts)
         self.srvArgs.update(kwargs)
-
-    @property
-    def srv(self):
-        raise NotImplemented()
 
     def _setup(self, runscripts=False):
         self._checkListening()
@@ -111,7 +132,7 @@ class BaseSQLScript(object):
             sys.exit(1)
 
 
-class BaseSQLLayer(object):
+class BaseSQLLayer(ServerGetterMixin):
     """A test layer which creates a database and starts a sql server"""
 
     __bases__ = ()
@@ -121,6 +142,7 @@ class BaseSQLLayer(object):
 
     def __init__(self, dbName, scripts=[], setup=None, snapshotIdent=None):
         self.dbName = dbName
+        self.scripts_hash = self._gen_scripts_hash(scripts)
         self.scripts = scripts
         if setup is not None:
             self.setup = setup
@@ -132,12 +154,17 @@ class BaseSQLLayer(object):
 
     def _snapPath(self, ident):
         # dbname does not matter here
-        digest = hashlib.sha1(str(self.scripts)).hexdigest()
-        return os.path.join(self.base_path, '%s_%s.sql' % (digest, ident))
+        return os.path.join(self.base_path, '%s_%s.sql' % (
+            self.scripts_hash, ident))
 
-    @property
-    def srv(self):
-        raise NotImplemented()
+    def _gen_scripts_hash(self, scripts):
+        ident = []
+        for script in scripts:
+            path = self.srv.resolveScriptPath(script)
+            statinfo = os.stat(path)
+            ident.append((path, statinfo.st_mtime))
+        digest = hashlib.sha1(str(ident)).hexdigest()
+        return digest
 
     def snapshotInfo(self, ident):
         sp = self._snapPath(ident)

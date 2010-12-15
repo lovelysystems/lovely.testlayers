@@ -34,7 +34,7 @@ Q_PIDS="""select procpid from
 pg_stat_activity where datname='%s' and procpid <> pg_backend_pid();"""
 
 
-class Server(object):
+class Server(sql.ServerBase):
     """ Class to control a pg server"""
 
     postgresqlConf = None
@@ -114,7 +114,7 @@ class Server(object):
     def runScripts(self, dbName, scripts):
         """runs sql scripts from given paths"""
         for script in scripts:
-            script = self._resolvePath(script)
+            script = self.resolveScriptPath(script)
             if self.verbose:
                 output = ''
             else:
@@ -122,7 +122,7 @@ class Server(object):
             util.system('%s -q -f %s %s %s' % (
                                     self.psql, script, dbName, output))
 
-    def _resolvePath(self, path):
+    def resolveScriptPath(self, path):
         parts = path.split(':')
         if not path.startswith('pg_config:') or len(parts)!=3:
             return os.path.abspath(path)
@@ -227,9 +227,6 @@ class Server(object):
     def getURI(self, dbName):
         return 'postgres://localhost:%s/%s' % (self.port, dbName)
 
-    def dbExists(self, dbName):
-        return dbName in self.listDatabases()
-
     def newConnection(self, dbName):
         cs = "dbname='%s' host='%s' port='%i'" % (dbName, self.host, self.port)
         return psycopg2.connect(cs)
@@ -238,11 +235,7 @@ class Server(object):
 class PGDBScript(sql.BaseSQLScript):
     """ Script to controll a postgresql server"""
 
-    @property
-    def srv(self):
-        if not hasattr(self, '_srv'):
-            self._srv = Server(**self.srvArgs)
-        return self._srv
+    server_impl = Server
 
 main = PGDBScript()
 
@@ -252,6 +245,7 @@ class PGDatabaseLayer(sql.BaseSQLLayer):
     """A test layer which creates a database and starts a postgres
     server"""
 
+    server_impl = Server
 
     def __init__(self, dbName, scripts=[], setup=None,
                  snapshotIdent=None, verbose=False,
@@ -269,13 +263,6 @@ class PGDatabaseLayer(sql.BaseSQLLayer):
     @property
     def base_path(self):
         return BASE
-
-    @property
-    def srv(self):
-        if not hasattr(self, '_srv'):
-            self._srv = Server(**self.srvArgs)
-        return self._srv
-
 
 class ExecuteSQL(object):
 
