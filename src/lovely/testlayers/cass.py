@@ -19,7 +19,6 @@
 from layer import WorkDirectoryLayer
 import logging
 import os
-import zc.buildout.download
 import setuptools
 import shutil
 import sys
@@ -33,8 +32,7 @@ def system(c, log='/dev/null'):
 
 logger = logging.getLogger(__name__)
 
-URL = 'http://mirror.deri.at/apache/incubator/cassandra/0.4.0/apache-cassandra-incubating-0.4.0-bin.tar.gz'
-
+URL = 'http://archive.apache.org/dist/cassandra/0.4.0/apache-cassandra-incubating-0.4.0-bin.tar.gz'
 
 TMPL_LOG4J = """
 log4j.rootLogger=DEBUG,stdout,R
@@ -152,6 +150,7 @@ class CassandraLayer(WorkDirectoryLayer):
         buildout = {'directory': bo,
                     'download-cache':'download-cache',
                     }
+        import zc.buildout.download
         download = zc.buildout.download.Download(
             buildout,
             logger=logger)

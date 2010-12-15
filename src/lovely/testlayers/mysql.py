@@ -32,10 +32,12 @@ class Server(object):
     """ Class to control a mysql server"""
 
     def __init__(self, dbDir=None, host='127.0.0.1', port=6543,
+                 defaults_file=None,
                  mysql_bin_dir=None):
         self.port = port
         self.host = host
         self.dbDir = dbDir
+        self.defaults_file = defaults_file
 
         self.cmd_post_fix = ''
         if not mysql_bin_dir:
@@ -55,7 +57,10 @@ class Server(object):
 
     def cmd(self, name, use_post_fix=True):
         name = name + (use_post_fix and self.cmd_post_fix)
-        return os.path.join(self.bin_dir, name)
+        cmd = os.path.join(self.bin_dir, name)
+        if self.defaults_file:
+            cmd += ' --defaults-file="%s"' % self.defaults_file
+        return cmd
 
     @property
     def mysql(self):
@@ -114,8 +119,11 @@ class Server(object):
         daemon_path = self.mysqld_path()
         if not daemon_path:
             raise IOError, "mysqld was not found. Is a MySQL server installed?"
-
-        cmd = "%s --no-defaults --datadir=%s --port=%i --pid-file=%s/mysql.pid --socket=%s/mysql.sock & > /dev/null 2>&1 " % (daemon_path, self.dbDir, self.port, self.dbDir, self.dbDir)
+        if self.defaults_file:
+            defaults = '--defaults-file="%s"' % self.defaults_file
+        else:
+            defaults = '--no-defaults'
+        cmd = "%s %s --datadir=%s --port=%i --pid-file=%s/mysql.pid --socket=%s/mysql.sock & > /dev/null 2>&1 " % (daemon_path, defaults, self.dbDir, self.port, self.dbDir, self.dbDir)
         util.system(cmd)
         while not self.isRunning():
             time.sleep(1)
@@ -206,13 +214,16 @@ class MySQLDatabaseLayer(sql.BaseSQLLayer):
 
     def __init__(self, dbName, scripts=[], setup=None,
                  snapshotIdent=None, port=16543,
-                 mysql_bin_dir=None):
+                 mysql_bin_dir=None, defaults_file=None):
+
         super(MySQLDatabaseLayer, self).__init__(dbName, scripts, setup,
                                                  snapshotIdent)
+
         self.dbDir = os.path.join(self.base_path, 'data' + str(port))
         self.port = port
         self.srvArgs = dict(port=self.port,
                             dbDir=self.dbDir,
+                            defaults_file=defaults_file,
                             mysql_bin_dir=mysql_bin_dir)
 
     @property

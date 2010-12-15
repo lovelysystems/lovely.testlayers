@@ -1,9 +1,19 @@
-=========================
-Changes in lovely.testing
-=========================
+==============
+Change History
+==============
 
 unreleased
 ==========
+
+ - allow to define a defaults file in mysql layer
+
+ - fixed cassandra layer download url
+
+ - removed dependency to ``zc.buildout`` which is now in an extra
+   called ``cassandra`` because it is only needed for downloading
+   cassandra.
+
+ - removed dependency to ``zope.testing``
 
  - removed dependency to ``transaction``
 

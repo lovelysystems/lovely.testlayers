@@ -22,30 +22,22 @@ import os
 def read(*rnames):
     return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
 
-long_description=(
-        'Lovely Testing Layers for use with zope.testing\n'
-        '***********************************************\n'
-        + '\n' +
-        read('src', 'lovely', 'testlayers', 'layer.txt')
-        + '\n' +
-        read('src', 'lovely', 'testlayers', 'memcached.txt')
-        + '\n' +
-        read('src', 'lovely', 'testlayers', 'nginx.txt')
-        + '\n' +
-        read('src', 'lovely', 'testlayers', 'cass.txt')
-        + '\n' +
-        read('src', 'lovely', 'testlayers', 'mysql.txt')
-        + '\n' +
-        read('src', 'lovely', 'testlayers', 'pgsql.txt')
-        + '\n'
-        )
-
-open('doc.txt', 'w').write(long_description)
+long_description='\n'.join((
+        read('README.TXT'),
+        read('src', 'lovely', 'testlayers', 'layer.txt'),
+        read('src', 'lovely', 'testlayers', 'memcached.txt'),
+        read('src', 'lovely', 'testlayers', 'nginx.txt'),
+        read('src', 'lovely', 'testlayers', 'cass.txt'),
+        read('src', 'lovely', 'testlayers', 'mysql.txt'),
+        read('src', 'lovely', 'testlayers', 'pgsql.txt'),
+        read('CHANGES.txt'),
+        ))
 
 setup(
     name = 'lovely.testlayers',
     version = '0.1.2',
-    description="Testing Layers for use with zope.testing",
+    description="mysql, postgres nginx, memcached cassandra test"+\
+                " layers for use with zope.testrunner",
     long_description=long_description,
     packages = find_packages('src'),
     author = "Lovely Systems",
@@ -59,10 +51,8 @@ setup(
     namespace_packages = ['lovely'],
     extras_require = dict(
         mysql=['MySQL-python'],
+        cassandra=['zc.buildout>=1.4'],
         pgsql=['psycopg2',
                'transaction']),
-    install_requires = ['setuptools',
-                        'zope.testing',
-                        'zc.buildout>=1.4',
-                        ]
+    install_requires = ['setuptools']
     )

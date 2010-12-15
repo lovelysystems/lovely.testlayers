@@ -1,0 +1,20 @@
+=======================================
+Development setup for lovely.testlayers
+=======================================
+
+This project uses buildout, so in order to start developing run the
+following in this directory::
+
+ python bootstrap.py
+ ./bin/buildout
+
+To run tests use::
+
+ ./bin/test
+
+Note that some tests require internet access and are not run by
+default. To run all tests use::
+
+ ./bin/test --all
+
+

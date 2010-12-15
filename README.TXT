@@ -1,14 +1,6 @@
-===============================================
-Lovely Testing Layers for use with zope.testing
-===============================================
+Lovely Testing Layers for use with zope.testrunner
+**************************************************
 
-For documentation see the testfiles in the source.
-
-Running tests
-=============
-
-run:
-
-python2.6 bootstrap.py
-./bin/buildout
-./bin/test --all
+This package includes various server test layers for mysql, postgres,
+nginx, memcached and cassandra. A generic server layer is also
+available for use with any network based server implementation.

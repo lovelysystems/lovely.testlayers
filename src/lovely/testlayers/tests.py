@@ -18,34 +18,32 @@
 
 import unittest
 import doctest
-from zope.testing.doctestunit import DocFileSuite
 from layer import cleanAll
-
-from zope.testing.loggingsupport import InstalledHandler
 
 def cleanWorkDirs(test):
     cleanAll()
 
 def test_suite():
     suites = (
-        DocFileSuite('layer.txt', setUp=cleanWorkDirs,
-                     optionflags=doctest.NORMALIZE_WHITESPACE|doctest.ELLIPSIS,
-                     ),
-        DocFileSuite('memcached.txt',
-                     optionflags=doctest.NORMALIZE_WHITESPACE|doctest.ELLIPSIS,
-                     ),
-        DocFileSuite('cass.txt',
-                     optionflags=doctest.NORMALIZE_WHITESPACE|doctest.ELLIPSIS,
-                     ),
-        DocFileSuite('pgsql.txt',
-                     optionflags=doctest.NORMALIZE_WHITESPACE|doctest.ELLIPSIS,
-                     ),
-        DocFileSuite('mysql.txt',
-                     optionflags=doctest.NORMALIZE_WHITESPACE|doctest.ELLIPSIS,
-                     ),
-        DocFileSuite('nginx.txt',
-                     optionflags=doctest.NORMALIZE_WHITESPACE|doctest.ELLIPSIS,
-                     ),
+        doctest.DocFileSuite(
+            'layer.txt', setUp=cleanWorkDirs,
+            optionflags=doctest.NORMALIZE_WHITESPACE|doctest.ELLIPSIS,
+            ),
+        doctest.DocFileSuite('memcached.txt',
+            optionflags=doctest.NORMALIZE_WHITESPACE|doctest.ELLIPSIS,
+            ),
+        doctest.DocFileSuite('cass.txt',
+            optionflags=doctest.NORMALIZE_WHITESPACE|doctest.ELLIPSIS,
+            ),
+        doctest.DocFileSuite('pgsql.txt',
+            optionflags=doctest.NORMALIZE_WHITESPACE|doctest.ELLIPSIS,
+            ),
+        doctest.DocFileSuite('mysql.txt',
+            optionflags=doctest.NORMALIZE_WHITESPACE|doctest.ELLIPSIS,
+            ),
+        doctest.DocFileSuite('nginx.txt',
+            optionflags=doctest.NORMALIZE_WHITESPACE|doctest.ELLIPSIS,
+            ),
         )
     # the cassandra test needs an internet connection for downloading cassandra
     suites[2].level=3
