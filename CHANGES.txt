@@ -5,6 +5,9 @@ Change History
 unreleased
 ==========
 
+ - stop sql servers when runscripts fails in layer setup because
+   otherwise the server still runs after the testrunner exited.
+
  - allow to define a defaults file in mysql layer
 
  - fixed cassandra layer download url

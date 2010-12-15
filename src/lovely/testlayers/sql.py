@@ -28,8 +28,6 @@ try:
 except ImportError:
     transaction = None
 
-#BASE = os.path.join(tempfile.gettempdir(), __name__)
-
 class BaseSQLScript(object):
     """Base script to controll a sql server"""
 
@@ -161,7 +159,11 @@ class BaseSQLLayer(object):
             self.srv.dropDB(self.dbName)
             self.srv.createDB(self.dbName)
             if self.scripts:
-                self.srv.runScripts(self.dbName, self.scripts)
+                try:
+                    self.srv.runScripts(self.dbName, self.scripts)
+                except:
+                    self.srv.stop()
+                    raise
             self.srv.dump(self.dbName, sp)
         # create the snapshot for app
         dirty = False
