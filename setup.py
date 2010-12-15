@@ -23,7 +23,7 @@ def read(*rnames):
     return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
 
 long_description='\n'.join((
-        read('README.TXT'),
+        read('README.txt'),
         read('src', 'lovely', 'testlayers', 'layer.txt'),
         read('src', 'lovely', 'testlayers', 'memcached.txt'),
         read('src', 'lovely', 'testlayers', 'nginx.txt'),
