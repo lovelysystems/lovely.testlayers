@@ -15,13 +15,16 @@
 # limitations under the License.
 #
 ##############################################################################
+
+
 import logging
 import subprocess
 import time
 from collections import deque
-
+import shlex
 import util
-
+import types
+import os
 
 class ServerLayer(object):
 
@@ -40,8 +43,10 @@ class ServerLayer(object):
 
     def start(self):
         assert self.start_cmd, 'No start command defined'
-        logging.info('Starting server %r', self.start_cmd)
-        return subprocess.Popen(self.start_cmd, shell=True)
+        if type(self.start_cmd) in types.StringTypes:
+            cmd = shlex.split(self.start_cmd)
+        logging.info('Starting server %r', cmd)
+        return subprocess.Popen(cmd)
 
     def stop(self):
         self.process.kill()
@@ -62,6 +67,7 @@ class ServerLayer(object):
                 to_start.append(server)
             else:
                 logging.info('Server up %s:%s', *server)
+
 
     def tearDown(self):
         self.stop()

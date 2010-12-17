@@ -5,6 +5,9 @@ Change History
 unreleased
 ==========
 
+ - do not use shell option in server layer command and sanitize the
+   command options.
+
  - reduced start/stop wait times in mysql layer
 
  - use modification times in layer sql script change checking
