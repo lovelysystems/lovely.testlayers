@@ -45,6 +45,8 @@ class ServerLayer(object):
         assert self.start_cmd, 'No start command defined'
         if type(self.start_cmd) in types.StringTypes:
             cmd = shlex.split(self.start_cmd)
+        else:
+            cmd = self.start_cmd
         logging.info('Starting server %r', cmd)
         return subprocess.Popen(cmd)
 

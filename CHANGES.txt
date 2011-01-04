@@ -5,6 +5,8 @@ Change History
 unreleased
 ==========
 
+ - fixed an UnboundLocalError in server layer
+
  - do not use shell option in server layer command and sanitize the
    command options.
 
