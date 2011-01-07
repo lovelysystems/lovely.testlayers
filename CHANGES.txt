@@ -2,8 +2,8 @@
 Change History
 ==============
 
-unreleased
-==========
+2011/01/07 0.2.0
+================
 
  - fixed an UnboundLocalError in server layer
 
