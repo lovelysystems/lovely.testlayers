@@ -2,6 +2,11 @@
 Change History
 ==============
 
+2011/05/10 0.2.1
+================
+
+ - fixed the mysqld_path to work with newer mysql version
+
 2011/01/07 0.2.0
 ================
 

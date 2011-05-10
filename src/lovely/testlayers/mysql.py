@@ -105,8 +105,10 @@ class Server(sql.ServerBase):
 
     def mysqld_path(self):
         # search for relative libexec
-        daemon_path = os.path.join(os.path.dirname(self.bin_dir),
-                                   'libexec', 'mysqld')
+        daemon_path = os.path.join(self.bin_dir, 'mysqld')
+        if not os.path.exists(daemon_path):
+            daemon_path = os.path.join(os.path.dirname(self.bin_dir),
+                                       'libexec', 'mysqld')
         if not os.path.exists(daemon_path):
             # look for the next available mysqld
             f = os.popen('locate -l1 "*\/mysqld"')
