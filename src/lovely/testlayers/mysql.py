@@ -54,10 +54,17 @@ class Server(sql.ServerBase):
             self.bin_dir = os.path.dirname(mysql_path)
         else:
             self.bin_dir = mysql_bin_dir
+        self.scripts_dir = os.path.join(os.path.dirname(self.bin_dir), 'scripts')
+        if not os.path.exists(self.scripts_dir):
+            self.scripts_dir = None
 
     def cmd(self, name, use_post_fix=True):
         name = name + (use_post_fix and self.cmd_post_fix)
         cmd = os.path.join(self.bin_dir, name)
+        if self.scripts_dir and not os.path.exists(cmd):
+            # try in the scripts dir (mysql 5.5)
+            cmd = os.path.join(self.scripts_dir, name)
+            cmd += ' --basedir="%s"' % os.path.dirname(self.bin_dir)
         if self.defaults_file:
             cmd += ' --defaults-file="%s"' % self.defaults_file
         return cmd
