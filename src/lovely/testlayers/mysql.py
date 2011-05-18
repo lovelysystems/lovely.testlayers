@@ -28,6 +28,7 @@ from lovely.testlayers import sql
 
 BASE = os.path.join(tempfile.gettempdir(), __name__)
 
+
 class Server(sql.ServerBase):
     """ Class to control a mysql server"""
 
@@ -81,7 +82,7 @@ class Server(sql.ServerBase):
 
     @property
     def mysqldump(self):
-        cmd = "%s --user=root --port=%i --host=%s --protocol=tcp "
+        cmd = "%s --user=root --port=%i --host=%s --protocol=tcp --routines"
         return cmd % (self.cmd('mysqldump'), self.port, self.host)
 
     def createDB(self, dbName):
@@ -131,7 +132,8 @@ class Server(sql.ServerBase):
             defaults = '--defaults-file="%s"' % self.defaults_file
         else:
             defaults = '--no-defaults'
-        cmd = "%s %s --datadir=%s --port=%i --pid-file=%s/mysql.pid --socket=%s/mysql.sock & > /dev/null 2>&1 " % (daemon_path, defaults, self.dbDir, self.port, self.dbDir, self.dbDir)
+        cmd = "%s %s --datadir=%s --port=%i --pid-file=%s/mysql.pid --socket=%s/mysql.sock & > /dev/null 2>&1 " % (
+                               daemon_path, defaults, self.dbDir, self.port, self.dbDir, self.dbDir)
         util.system(cmd)
         while not self.isRunning():
             time.sleep(0.1)
