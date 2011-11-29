@@ -35,8 +35,11 @@ class WorkDirectoryLayer(object):
     """a test layer that creates a directory"""
 
     wdClean = False
-    wdNameSpecific = True # defines if the work directory is different
-                          # for different layer names
+
+    # defines if the work directory is different for different layer
+    # names
+    wdNameSpecific = True
+    snapDir = None
 
     def getBaseDir(self):
         name = '.'.join((self.__class__.__module__,
@@ -60,14 +63,21 @@ class WorkDirectoryLayer(object):
             return self._wd
         return os.path.join(self._wd, *args)
 
+    def _snapPath(self, ident):
+        d = self.snapDir or self._bd
+        return os.path.join(d, ('ss_%s.tar.gz' % ident))
+
     def makeSnapshot(self, ident="1"):
         assert ident
-        tf = os.path.join(self._bd, ('ss_%s.tar.gz' % ident))
-        system('cd "%s" && tar -zcf "%s" work' % (self._bd, tf))
+        system('cd "%s" && tar -zcf "%s" work' % (self._bd,
+                                                  self._snapPath(ident)))
+
+    def snapshotInfo(self, ident="1"):
+        sp = self._snapPath(ident)
+        return os.path.isfile(sp), sp
 
     def hasSnapshot(self, ident="1"):
-        tf = os.path.join(self._bd, ('ss_%s.tar.gz' % ident))
-        return os.path.exists(tf)
+        return os.path.isfile(self._snapPath(ident))
 
     def removeWD(self):
         """removes the working directory"""
@@ -75,8 +85,8 @@ class WorkDirectoryLayer(object):
 
     def restoreSnapshot(self, ident="1"):
         assert ident
-        tf = os.path.join(self._bd, ('ss_%s.tar.gz' % ident))
-        if not os.path.isfile(tf):
+        exists, tf = self.snapshotInfo(ident)
+        if not exists:
             raise ValueError, "Snapshot %r not found" % ident
         self.removeWD()
         system('cd "%s" && tar -zxf "%s"' % (self._bd, tf))

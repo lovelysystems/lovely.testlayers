@@ -38,6 +38,14 @@ We can check if we have a snapshot.
     >>> myLayer.hasSnapshot('first')
     True
 
+And get the info for the snapshot.
+
+    >>> exists, path = myLayer.snapshotInfo('first')
+    >>> exists
+    True
+    >>> path
+    '...ss_first.tar.gz'
+
 And now we make a second directory and another snapshot.
 
     >>> os.mkdir(myLayer.wdPath('secondDirectory'))
@@ -67,3 +75,27 @@ We can also override snapshots.
     >>> myLayer.restoreSnapshot('first')
     >>> sorted(os.listdir(myLayer.wdPath()))
     ['firstDirectory', 'secondDirectory', 'thirdDirectory']
+
+The snapshot directory can be specified, this is usefull if snapshots
+need to be persistet to the project directory for example.
+
+    >>> myLayer2 = MyLayer('mylayer2')
+    >>> import tempfile
+    >>> myLayer2.setUpWD()
+
+    >>> myLayer2.snapDir = tempfile.mkdtemp()
+    >>> os.mkdir(myLayer2.wdPath('adir'))
+
+    >>> myLayer2.makeSnapshot('first')
+    >>> os.listdir(myLayer2.snapDir)
+    ['ss_first.tar.gz']
+
+    >>> os.mkdir(myLayer2.wdPath('bdir'))
+    >>> sorted(os.listdir(myLayer2.wdPath()))
+    ['adir', 'bdir']
+
+    >>> myLayer2.restoreSnapshot('first')
+
+    >>> sorted(os.listdir(myLayer2.wdPath()))
+    ['adir']
+

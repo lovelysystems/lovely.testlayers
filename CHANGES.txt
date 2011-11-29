@@ -5,6 +5,13 @@ Change History
 unreleased
 ==========
 
+ - allow to set a snapshot directory in workdirectory-layer - this
+   allows for generating non-temporary snapshots.
+
+ - moved wait implementation for server start in server-layer into
+   start, this is usefull when calling start and stop in tests, but
+   might introduce incompatibilities when subclassed.
+
  - moved to github
 
  - postgresql 8.4 compat

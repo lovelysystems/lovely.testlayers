@@ -47,19 +47,12 @@ class ServerLayer(object):
             cmd = shlex.split(self.start_cmd)
         else:
             cmd = self.start_cmd
-        logging.info('Starting server %r', cmd)
-        return subprocess.Popen(cmd)
-
-    def stop(self):
-        self.process.kill()
-        self.process.wait()
-
-    def setUp(self):
         # make sure we the ports are free
         for server in self.servers:
             assert not util.isUp(
                 *server), 'Port already listening %s:%s' % server
-        self.process = self.start()
+        logging.info('Starting server %r', cmd)
+        self.process = subprocess.Popen(cmd)
         to_start = deque(self.servers)
         while to_start:
             time.sleep(0.05)
@@ -69,6 +62,13 @@ class ServerLayer(object):
                 to_start.append(server)
             else:
                 logging.info('Server up %s:%s', *server)
+
+    def stop(self):
+        self.process.kill()
+        self.process.wait()
+
+    def setUp(self):
+        self.start()
 
 
     def tearDown(self):
