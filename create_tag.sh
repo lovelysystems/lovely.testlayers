@@ -53,6 +53,6 @@ then
 fi
 
 echo "Creating tag $VERSION..."
-git tag -a "$VERSION" -m "Tag release for revision $VERSION" > /dev/null
-git push --tags > /dev/null
+git tag -a "$VERSION" -m "Tag release for revision $VERSION"
+git push --tags
 echo "Done."
