@@ -2,8 +2,8 @@
 Change History
 ==============
 
-unreleased
-==========
+2011/11/29 0.3.0
+================
 
  - allow to set a snapshot directory in workdirectory-layer - this
    allows for generating non-temporary snapshots.
