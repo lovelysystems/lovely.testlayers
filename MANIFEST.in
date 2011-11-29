@@ -1,0 +1,2 @@
+recursive-include src *.conf *.sql *.txt
+include *.txt
