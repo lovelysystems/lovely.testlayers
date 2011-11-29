@@ -26,6 +26,7 @@ import shutil
 import psycopg2
 from lovely.testlayers import util
 from lovely.testlayers import sql
+import re
 
 BASE = os.path.join(tempfile.gettempdir(), __name__)
 here = os.path.dirname(__file__)
@@ -86,8 +87,8 @@ class Server(sql.ServerBase):
         return os.path.join(self.binDir, name)
 
     def createDB(self, dbName):
-        cmd = '%s -q -p %s -h %s %s' % (self.cmd('createdb'),
-                                        self.port, self.host, dbName)
+        cmd = '%s -p %s -h %s %s' % (self.cmd('createdb'),
+                                     self.port, self.host, dbName)
         util.system(cmd)
 
     def disconnectAll(self, dbName):
@@ -107,8 +108,8 @@ class Server(sql.ServerBase):
         if not dbName in self.listDatabases():
             return
         self.disconnectAll(dbName)
-        cmd = '%s -q -p %s -h %s %s' % (self.cmd('dropdb'),
-                                        self.port, self.host, dbName)
+        cmd = '%s -p %s -h %s %s' % (self.cmd('dropdb'),
+                                     self.port, self.host, dbName)
         util.system(cmd)
 
     def runScripts(self, dbName, scripts):
@@ -189,12 +190,16 @@ class Server(sql.ServerBase):
     def listDatabases(self):
         f = os.popen('%s -l' % self.psql)
         res = f.read()
+
         res = res.split('\n')[3:]
         dbs = []
+        pat = re.compile(r'^(\w+)\s.*')
         for l in res:
-            if not l or l.startswith('('):
+            if not l:
                 break
-            dbs.append(l.split('|', 1)[0].strip())
+            m = pat.match(l.strip())
+            if m:
+                dbs.append(m.group(1))
         f.close()
         return dbs
 
@@ -215,7 +220,7 @@ class Server(sql.ServerBase):
         t = time.time()
         self.dropDB(dbName)
         self.createDB(dbName)
-        cmd = '%s -q -p %s -f %s %s' % (self.cmd('psql'),
+        cmd = '%s -p %s -f %s %s' % (self.cmd('psql'),
                                      self.port, path,
                                      dbName)
         import popen2

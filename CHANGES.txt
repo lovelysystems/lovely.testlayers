@@ -2,6 +2,13 @@
 Change History
 ==============
 
+unreleased
+==========
+
+ - moved to github
+
+ - postgresql 8.4 compat
+
 2011/05/18 0.2.3
 ================
 

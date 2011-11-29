@@ -19,35 +19,46 @@
 import unittest
 import doctest
 from layer import cleanAll
+import os
+
+here = os.path.abspath(os.path.dirname(__file__))
+
+
+def project_path(*path):
+    return os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(here))),
+        *path)
+
+def setUp(test):
+    test.globs['project_path'] = project_path
 
 def cleanWorkDirs(test):
+    setUp(test)
     cleanAll()
+
+def create_suite(testfile, setUp=setUp,
+                 optionflags=doctest.NORMALIZE_WHITESPACE|doctest.ELLIPSIS,
+                 level=None, **kwargs):
+    s = doctest.DocFileSuite(
+        testfile, setUp=setUp,
+        optionflags=optionflags,
+        **kwargs
+        )
+    if level:
+        s.level = level
+    return s
 
 def test_suite():
     suites = (
-        doctest.DocFileSuite(
-            'layer.txt', setUp=cleanWorkDirs,
-            optionflags=doctest.NORMALIZE_WHITESPACE|doctest.ELLIPSIS,
-            ),
-        doctest.DocFileSuite('memcached.txt',
-            optionflags=doctest.NORMALIZE_WHITESPACE|doctest.ELLIPSIS,
-            ),
-        doctest.DocFileSuite('cass.txt',
-            optionflags=doctest.NORMALIZE_WHITESPACE|doctest.ELLIPSIS,
-            ),
-        doctest.DocFileSuite('pgsql.txt',
-            optionflags=doctest.NORMALIZE_WHITESPACE|doctest.ELLIPSIS,
-            ),
-        doctest.DocFileSuite('mysql.txt',
-            optionflags=doctest.NORMALIZE_WHITESPACE|doctest.ELLIPSIS,
-            ),
-        doctest.DocFileSuite('nginx.txt',
-            optionflags=doctest.NORMALIZE_WHITESPACE|doctest.ELLIPSIS,
-            ),
+        create_suite('layer.txt', setUp=cleanWorkDirs),
+        create_suite('memcached.txt'),
+        # the cassandra test needs an internet connection for downloading cassandra
+        create_suite('cass.txt', level=3),
+        create_suite('pgsql.txt'),
+        # needs a mysql installation
+        create_suite('mysql.txt', setUp=cleanWorkDirs, level=2),
+        create_suite('nginx.txt')
         )
-    # the cassandra test needs an internet connection for downloading cassandra
-    suites[2].level=3
-
     return unittest.TestSuite(suites)
 
 if __name__ == '__main__':

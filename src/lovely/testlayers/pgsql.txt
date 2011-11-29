@@ -10,9 +10,12 @@ pgserver control
 
     >>> dbName = 'testing'
 
-Let us create a postgres server.
+Let us create a postgres server. Note that we give the absolute path
+to the pg_config executable in order to use the postgresql
+installation from this project.
 
-    >>> srv = pgsql.Server(dbDir, port=16666)
+    >>> pgConfig = project_path('parts', 'postgres', 'bin', 'pg_config')
+    >>> srv = pgsql.Server(dbDir, port=16666, pgConfig=pgConfig, verbose=True)
 
 Optional we could also define a path to a special postgresql.conf file
 to use, otherwise defaults are used.
@@ -74,7 +77,7 @@ We can run scripts from the filesystem.
 Or from the shared directories by prefixing it with pg_config. So let
 us install tsearch2.
 
-    >>> script = 'pg_config:share:contrib/tsearch2.sql'
+    >>> script = 'pg_config:share:system_views.sql'
     >>> srv.runScripts(dbName, [script])
 
 
@@ -151,7 +154,7 @@ We can generate a control script for use as commandline script.
 The simplest script is just to define a server.
 
     >>> dbDir2 = os.path.join(tmp, 'db2')
-    >>> main = pgsql.PGDBScript(dbDir2, port=16666)
+    >>> main = pgsql.PGDBScript(dbDir2, port=16666, pgConfig=pgConfig)
     >>> main.start()
     >>> sorted(main.srv.listDatabases())
     ['postgres', 'template0', 'template1']
@@ -160,7 +163,9 @@ The simplest script is just to define a server.
 
 We can also define a database to be created upon startup.
 
-    >>> main = pgsql.PGDBScript(dbDir2, dbName='hoschi', port=16666)
+    >>> main = pgsql.PGDBScript(dbDir2,
+    ...                         pgConfig=pgConfig,
+    ...                         dbName='hoschi', port=16666)
     >>> main.start()
     >>> sorted(main.srv.listDatabases())
     ['hoschi', 'postgres', 'template0', 'template1']
@@ -174,7 +179,8 @@ The database is created only one time.
 And also scripts to be executed.
 
     >>> main = pgsql.PGDBScript(dbDir2, dbName='hoschi2',
-    ...                          scripts=[script], port=16666)
+    ...                         pgConfig=pgConfig,
+    ...                         scripts=[script], port=16666)
     >>> main.start()
 
 Note that we used the same directory here so the other db is still there.
@@ -201,7 +207,7 @@ PGDatabaseLayer
 
 Let's create a layer::
 
-    >>> layer = pgsql.PGDatabaseLayer('testing')
+    >>> layer = pgsql.PGDatabaseLayer('testing', pgConfig=pgConfig)
 
 We can get the store uri.
 
@@ -230,16 +236,16 @@ We can have appsetup definitions and sql scripts.  There is also a
 convinience class that let's us execute sql statements as setup.
 
     >>> setup = pgsql.ExecuteSQL('create table testing (title varchar)')
-    >>> layer = pgsql.PGDatabaseLayer('testing', setup=setup)
+    >>> layer = pgsql.PGDatabaseLayer('testing', setup=setup, pgConfig=pgConfig)
     >>> layer.setUp()
     >>> layer.tearDown()
-    >>> layer = pgsql.PGDatabaseLayer('testing', setup=setup)
+    >>> layer = pgsql.PGDatabaseLayer('testing', setup=setup, pgConfig=pgConfig)
     >>> layer.setUp()
     >>> layer.tearDown()
 
 Also if the database name is different, the same snapshots can be used.
 
-    >>> layer2 = pgsql.PGDatabaseLayer('testing2', setup=setup)
+    >>> layer2 = pgsql.PGDatabaseLayer('testing2', setup=setup, pgConfig=pgConfig)
     >>> layer2.setUp()
     >>> layer2.tearDown()
 
@@ -252,12 +258,13 @@ dotted name of the setup callable and the hash of the arguments.
 Let us provide an ident and scripts.
 
     >>> layer = pgsql.PGDatabaseLayer('testing3', setup=setup,
+    ...                               pgConfig=pgConfig,
     ...                               snapshotIdent='blah',
-    ...                               scripts=['pg_config:share:contrib/tsearch2.sql'])
+    ...                               scripts=['pg_config:share:system_views.sql'])
     >>> layer.snapshotIdent
     'blah'
     >>> layer.scripts
-    ['pg_config:share:contrib/tsearch2.sql']
+    ['pg_config:share:system_views.sql']
 
 
 On setup the snapshot with the setup is created, therefore setup is

@@ -23,7 +23,7 @@ def read(*rnames):
     return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
 
 long_description='\n'.join((
-        read('README.txt'),
+        read('README.rst'),
         read('src', 'lovely', 'testlayers', 'layer.txt'),
         read('src', 'lovely', 'testlayers', 'memcached.txt'),
         read('src', 'lovely', 'testlayers', 'nginx.txt'),
@@ -46,7 +46,7 @@ setup(
     keywords = "testing zope layer test cassandra memcached",
     license = "Apache License 2.0",
     zip_safe = True,
-    url = 'http://code.google.com/p/lovely-testlayers/',
+    url = 'https://github.com/lovelysystems/lovely.testlayers',
     include_package_data = True,
     namespace_packages = ['lovely'],
     extras_require = dict(
