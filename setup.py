@@ -25,6 +25,7 @@ def read(*rnames):
 long_description='\n'.join((
         read('README.rst'),
         read('src', 'lovely', 'testlayers', 'layer.txt'),
+        read('src', 'lovely', 'testlayers', 'server.txt'),
         read('src', 'lovely', 'testlayers', 'memcached.txt'),
         read('src', 'lovely', 'testlayers', 'nginx.txt'),
         read('src', 'lovely', 'testlayers', 'cass.txt'),

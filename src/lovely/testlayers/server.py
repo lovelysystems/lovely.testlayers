@@ -56,6 +56,10 @@ class ServerLayer(object):
         to_start = deque(self.servers)
         while to_start:
             time.sleep(0.05)
+            returncode = self.process.poll()
+            if not returncode is None and returncode != 0:
+                raise SystemError("Failed to start server rc=%s cmd=%s" %
+                                  (returncode, self.start_cmd))
             server = to_start.popleft()
             if not util.isUp(*server):
                 logging.info('Server not up %s:%s', *server)

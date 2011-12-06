@@ -1,0 +1,35 @@
+===================
+Basic Servier Layer
+===================
+
+The server layer allows to start servers which are listening to a
+specific port, by providing the startup command.
+
+    >>> from lovely.testlayers import server
+    >>> sl = server.ServerLayer('sl1', servers=['localhost:33333'],
+    ...                         start_cmd='nc -k -l 33333')
+
+Setting up the layer starts the server.
+
+    >>> sl.setUp()
+
+Now we can acces the server port.
+
+    >>> from lovely.testlayers import util
+    >>> util.isUp('localhost', 33333)
+    True
+
+No more after teardown.
+
+    >>> sl.tearDown()
+    >>> util.isUp('localhost', 33333)
+    False
+
+If the command startup fails an error gets raised.
+
+    >>> sl = server.ServerLayer('sl1', servers=['localhost:33333'],
+    ...                         start_cmd='false')
+    >>> sl.setUp()
+    Traceback (most recent call last):
+    ...
+    SystemError: Failed to start server rc=1 cmd=false
