@@ -2,8 +2,8 @@
 Change History
 ==============
 
-unreleased
-==========
+2011/12/06 0.3.2
+================
 
  - fixed #1 an endless loop in server layer
 
