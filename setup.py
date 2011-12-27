@@ -32,6 +32,9 @@ long_description='\n'.join((
         read('src', 'lovely', 'testlayers', 'cass.txt'),
         read('src', 'lovely', 'testlayers', 'mysql.txt'),
         read('src', 'lovely', 'testlayers', 'pgsql.txt'),
+        read('src', 'lovely', 'testlayers', 'mongodb_single.txt'),
+        read('src', 'lovely', 'testlayers', 'mongodb_masterslave.txt'),
+        read('src', 'lovely', 'testlayers', 'mongodb_replicaset.txt'),
         read('CHANGES.txt'),
         ))
 
@@ -55,6 +58,7 @@ setup(
         mysql=['MySQL-python'],
         cassandra=['zc.buildout>=1.4'],
         pgsql=['psycopg2',
-               'transaction']),
+               'transaction'],
+        mongodb=['pymongo==2.1']),
     install_requires = ['setuptools']
     )

@@ -63,6 +63,21 @@ def test_suite():
         )
     return unittest.TestSuite(suites)
 
+def mongodb_suite():
+    """
+    A test suite for running MongoDB tests, boot it by issuing::
+
+        bin/test-mongodb --suite-name=mongodb_suite
+    """
+    suites = (
+        # the mongodb test needs an installed mongodb
+        # e.g. ``bin/buildout install mongodb``
+        create_suite('mongodb_single.txt'),
+        create_suite('mongodb_masterslave.txt'),
+        create_suite('mongodb_replicaset.txt'),
+    )
+    return unittest.TestSuite(suites)
+
 if __name__ == '__main__':
     unittest.main(defaultTest='test_suite')
 
