@@ -277,7 +277,12 @@ class MongoMasterSlaveLayer(MongoMultiNodeLayer):
 
 
 class MongoReplicaSetLayer(MongoMultiNodeLayer):
-
+    """
+    Setup all nodes with a replicaset-name assigned 
+    but not knowing the other nodes
+    
+    then finally start them all by calling the admin-command 'replSetInitiate'
+    """
     def __init__(self, name, mongod_bin = None, storage_port_base = 37030, count = 3, cleanup = True, replicaset_name = None):
         """
         Configure multiple ``MongoLayer`` into this ``CascadedLayer``.
@@ -308,7 +313,7 @@ class MongoReplicaSetLayer(MongoMultiNodeLayer):
         # final layer for establishing the replica set which will be set up when all nodes have booted
         # hint: use the MongoDB instance booted most recently for inquiry, because
         # this one can reach the other - previously booted - nodes immediately.
-        self.layers.append(MongoReplicaSetInitLayer(self.name + '.init', self.storage_ports[-1]))
+        self.layers.append(MongoReplicaSetInitLayer(self.name + '.init', self.replicaset_name, self.storage_ports))
 
 
     def _get_replset_option(self, exclude=None):
@@ -316,7 +321,7 @@ class MongoReplicaSetLayer(MongoMultiNodeLayer):
         Helper function to compute value of the ``--replSet`` command line option for ``mongod``.
         Format: ``<replicasetname>/<hostname1:port1>,<hostname2:port2>,<hostname3:port3>``
         """
-        nodelist = [':' + str(storage_port) for _, storage_port in self.layer_options if storage_port != exclude]
+        nodelist = ['127.0.0.1:' + str(storage_port) for _, storage_port in self.layer_options if storage_port != exclude]
         return '%s/%s' % (self.replicaset_name, ','.join(nodelist))
 
 
@@ -336,14 +341,15 @@ class MongoReplicaSetInitLayer(object):
 
     __bases__ = ()
     
-    def __init__(self, name, port, timeout = 60):
+    def __init__(self, name, replicaset_name, ports, timeout = 60):
         """
         :name: (required) The first and only positional argument is the layer name.
         :port: The port to which node to connect for querying and controlling.
         :timeout: How long to wait for the replica set to be established, defaults to ``60`` seconds.
         """
         self.__name__ = name
-        self.port = port
+        self.replicaset_name = replicaset_name
+        self.ports = ports
         self.timeout = timeout
         self.starttime = 0
         logger.info('Initializing MongoReplicaSetInitLayer') 
@@ -368,7 +374,12 @@ class MongoReplicaSetInitLayer(object):
         Also accounts for timeout.
         """
         logger.info('Waiting for replica set to be fully initialized, this might take up to one minute.')
+        time.sleep(3) # wait for nodes to settle, damn timing-issues!
         self.starttime = time.time()
+        
+        if not self.replicaset_initiate():
+            raise Exception("Could not initialize Replicaset")
+        
         while not self.replicaset_ready:
             self.check_timeout()
             time.sleep(1)
@@ -384,6 +395,59 @@ class MongoReplicaSetInitLayer(object):
             logger.error(msg)
             raise MongoReplicasetInitError(msg)
 
+
+    def replicaset_initiate(self):
+        """
+        call replSetInitiate on one of the nodes of our replicaset in spe
+        providing all the other noded as options
+        """
+        from pymongo import Connection
+        host = 'localhost:%s' % self.ports[-1]
+        logger.info("Initiating ReplicaSet '{name}' ...".format(name = self.replicaset_name))
+        
+        command = 'replSetInitiate'
+        
+        try:
+            mongo_conn = Connection(host, safe=True)
+            # we are not interested in eventual errors
+            status = mongo_conn.admin.command('replSetGetStatus', check=False)
+            if status.get("set") == self.replicaset_name:
+                if status.get("myState") in (1,2) and len(status.get("members",[])) == len(self.ports):
+               
+                    logger.info("Replicaset already initialized")
+                    logger.info(status)
+                    return True
+                else:
+                    logger.info(status)
+                    return False
+            
+            result = mongo_conn.admin.command(command, self.replicaset_initiate_options())
+            if result.get("ok") == 1.0:
+                logger.info("Initiated ReplicaSet: '{info}'".format(info=result.get("info")))
+                return True
+            else:
+                logger.warning("Could not initiate the Replicaset: {result}".format(result=result))
+        except Exception, msg:
+            logger.error("Error initiating: {msg}".format(msg = msg))
+            pass
+        
+        return False
+        
+    def replicaset_initiate_options(self):
+        options = {
+                   "_id":self.replicaset_name,
+                   "members":[]
+                   }
+        for port in self.ports:
+            options["members"].append(
+                                      {
+                                       '_id':port-self.ports[0],
+                                       'host':'localhost:{0}'.format(port)
+                                       }
+                                      )
+        logger.debug(options)
+        return options
+
     @property
     def replicaset_ready(self):
         """
@@ -395,22 +459,22 @@ class MongoReplicaSetInitLayer(object):
         """
 
         from pymongo import Connection
-        host = 'localhost:%s' % self.port
+        host = 'localhost:%s' % self.ports[-1]
         mongo_conn = Connection(host, safe = True)
-
-        result = mongo_conn.admin.command('replSetGetStatus', check = False)
-        startup_status = result.get('startupStatus')
-        replset_name = result.get('set')
-
+        
+        try:
+            result = mongo_conn.admin.command('replSetGetStatus', check = False)
+            startup_status = result.get('startupStatus')
+            replset_name = result.get('set')
+        except pymongo.errors.OperationalFailure, msg:
+            logger.error(msg)
+            return False
+        
         success = False
 
         # cluster is still booting
         if startup_status:
             logger.info("startup_status=%s %s" % (startup_status, result.get('errmsg')))
-            # all cluster nodes are up, but replica set doesn't seem to be initiated yet, so just do it
-            if startup_status == 3:
-                init_result = mongo_conn.admin.command('replSetInitiate')
-                logger.info('replSetInitiate: %s' % init_result)
 
         # replica set is initiated, check that all member
         # nodes established their roles (PRIMARY|SECONDARY)
@@ -419,7 +483,11 @@ class MongoReplicaSetInitLayer(object):
             logger.info('name={replset_name}, nodes={member_states}'.format(**locals()))
             primary_up = 'PRIMARY' in member_states
             secondaries_up = all(map(lambda x: x in ('PRIMARY', 'SECONDARY'), member_states))
-            success = primary_up and secondaries_up
+            
+            all_up = len(self.ports) == len(member_states)
+            logger.debug("{0} of {1} nodes are up".format(len(member_states), len(self.ports)))
+            
+            success = primary_up and secondaries_up and all_up
         
         mongo_conn.disconnect()
         return success
