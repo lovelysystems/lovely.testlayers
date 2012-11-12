@@ -36,7 +36,7 @@ long_description='\n'.join((
 
 setup(
     name = 'lovely.testlayers',
-    version = '0.3.3',
+    version = '0.3.4',
     description="mysql, postgres nginx, memcached cassandra test"+\
                 " layers for use with zope.testrunner",
     long_description=long_description,
@@ -46,7 +46,7 @@ setup(
     package_dir = {'':'src'},
     keywords = "testing zope layer test cassandra memcached",
     license = "Apache License 2.0",
-    zip_safe = True,
+    zip_safe = False,
     url = 'https://github.com/lovelysystems/lovely.testlayers',
     include_package_data = True,
     namespace_packages = ['lovely'],
