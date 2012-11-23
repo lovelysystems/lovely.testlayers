@@ -33,7 +33,7 @@ class ServerLayer(object):
 
     __bases__ = ()
 
-    def __init__(self, name, servers=[], start_cmd=None, **subprocess_args):
+    def __init__(self, name, servers=[], start_cmd=None, subprocess_args={}):
         self.__name__ = name
         self.servers = []
         self.start_cmd = start_cmd
