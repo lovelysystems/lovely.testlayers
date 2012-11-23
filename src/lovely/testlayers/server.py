@@ -33,10 +33,11 @@ class ServerLayer(object):
 
     __bases__ = ()
 
-    def __init__(self, name, servers=[], start_cmd=None):
+    def __init__(self, name, servers=[], start_cmd=None, subprocess_args={}):
         self.__name__ = name
         self.servers = []
         self.start_cmd = start_cmd
+        self.subprocess_args = subprocess_args
         for server in servers:
             host, port = server.split(':')
             self.servers.append((host, int(port)))
@@ -52,7 +53,7 @@ class ServerLayer(object):
             assert not util.isUp(
                 *server), 'Port already listening %s:%s' % server
         logging.info('Starting server %r', cmd)
-        self.process = subprocess.Popen(cmd)
+        self.process = subprocess.Popen(cmd, **self.subprocess_args)
         to_start = deque(self.servers)
         while to_start:
             time.sleep(0.05)
