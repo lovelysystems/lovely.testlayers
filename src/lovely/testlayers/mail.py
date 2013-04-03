@@ -63,11 +63,11 @@ class SMTPServerHandler(SMTPServer):
 class SMTPServerLayer(object):
 
     __bases__ = ()
+    smtpd = None
 
     def __init__(self, name='smtpd', port=1025):
         self.__name__ = name
         self.port = port
-        self.smtpd = None
 
     def setUp(self):
         """start the stmpd server layer"""
