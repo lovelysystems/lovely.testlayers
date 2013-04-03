@@ -65,3 +65,12 @@ And ``popleft()`` to get the email that was received at first::
 The layer can be shutdown using the tearDown method::
 
     >>> layer.tearDown()
+
+After tearDown() the server can't receive any more emails::
+
+    >>> s = SMTP()
+    >>> _ = s.connect('localhost:1025')
+    Traceback (most recent call last):
+    ...
+    error: [Errno 111] Connection refused
+
