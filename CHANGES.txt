@@ -5,6 +5,9 @@ Change History
 Unreleased
 ==========
 
+2013/04/03 0.4.0
+================
+
  - added SMTPServerLayer
 
  - updated bootstrap.py and nginx/psql download location
