@@ -5,6 +5,8 @@ Change History
 Unreleased
 ==========
 
+ - SMTPServerLayer's server property is now available before calling setUp()
+
 2013/04/03 0.4.2
 ================
 

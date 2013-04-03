@@ -67,10 +67,12 @@ class SMTPServerLayer(object):
     def __init__(self, name='smtpd', port=1025):
         self.__name__ = name
         self.port = port
+        self.smtpd = SMTPServerHandler(('localhost', self.port), None)
 
     def setUp(self):
         """start the stmpd server layer"""
-        self.smtpd = SMTPServerHandler(('localhost', self.port), None)
+        if self.smtpd is None:
+            self.smtpd = SMTPServerHandler(('localhost', self.port), None)
         self.thread = Thread(target=asyncore.loop, kwargs={'timeout': 1})
         self.thread.start()
 
@@ -82,6 +84,7 @@ class SMTPServerLayer(object):
         """
         self.smtpd.close()
         self.thread.join()
+        self.smtpd = None
 
     @property
     def server(self):
