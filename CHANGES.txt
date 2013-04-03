@@ -5,6 +5,11 @@ Change History
 Unreleased
 ==========
 
+2013/04/03 0.4.1
+================
+
+ - add missing __bases__ to SMTPServerLayer
+
 2013/04/03 0.4.0
 ================
 

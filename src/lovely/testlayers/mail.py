@@ -61,6 +61,9 @@ class SMTPServerHandler(SMTPServer):
 
 
 class SMTPServerLayer(object):
+
+    __bases__ = ()
+
     def __init__(self, port=1025):
         self.port = port
 

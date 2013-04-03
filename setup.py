@@ -28,6 +28,7 @@ long_description='\n'.join((
         read('src', 'lovely', 'testlayers', 'server.txt'),
         read('src', 'lovely', 'testlayers', 'memcached.txt'),
         read('src', 'lovely', 'testlayers', 'nginx.txt'),
+        read('src', 'lovely', 'testlayers', 'mail.txt'),
         read('src', 'lovely', 'testlayers', 'cass.txt'),
         read('src', 'lovely', 'testlayers', 'mysql.txt'),
         read('src', 'lovely', 'testlayers', 'pgsql.txt'),
@@ -36,7 +37,7 @@ long_description='\n'.join((
 
 setup(
     name = 'lovely.testlayers',
-    version = '0.4.0',
+    version = '0.4.1',
     description="mysql, postgres nginx, memcached cassandra test"+\
                 " layers for use with zope.testrunner",
     long_description=long_description,
