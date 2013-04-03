@@ -53,6 +53,7 @@ def test_suite():
         create_suite('layer.txt', setUp=cleanWorkDirs),
         create_suite('memcached.txt'),
         create_suite('server.txt'),
+        create_suite('mail.txt'),
         # the cassandra test needs an internet connection for downloading cassandra
         create_suite('cass.txt', level=3),
         create_suite('pgsql.txt'),
