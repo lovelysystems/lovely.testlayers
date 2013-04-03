@@ -24,7 +24,8 @@ class Mailbox(object):
 
     def popleft(self):
         """
-        returns the first message that was received
+        returns the first message that was received and removes that message
+        from the mailbox.
 
         or none if no message was received
         """
@@ -34,7 +35,8 @@ class Mailbox(object):
 
     def pop(self):
         """
-        returns the last message that was received
+        returns the last message that was received and removes that message
+        from the mailbox.
 
         or none if no message was received
         """
