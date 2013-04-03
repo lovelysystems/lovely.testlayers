@@ -20,7 +20,7 @@ class Mailbox(object):
 
         returns True or False
         """
-        return not any(self.messages)
+        return not (self.messages and True or False)
 
     def popleft(self):
         """
