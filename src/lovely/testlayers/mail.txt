@@ -98,8 +98,8 @@ Verification that setUp() and tearDown() work for subsequent calls::
     ...
     error: [Errno 111] Connection refused
 
-Test that the server property is accessable before calling setUp()::
+Before setUp() is called the ``server`` property is None::
 
     >>> layer = mail.SMTPServerLayer(port=1025)
-    >>> layer.server
-    <lovely.testlayers.mail.SMTPServerHandler listening localhost:1025 at ...>
+    >>> layer.server is None
+    True
