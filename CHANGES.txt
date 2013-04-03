@@ -2,6 +2,10 @@
 Change History
 ==============
 
+Unreleased
+==========
+
+ - updated bootstrap.py and nginx/psql download location
 
 2012/11/23 0.3.5
 ================
