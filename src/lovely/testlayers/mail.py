@@ -63,6 +63,7 @@ class SMTPServerHandler(SMTPServer):
 class SMTPServerLayer(object):
 
     __bases__ = ()
+    smtpd = None
 
     def __init__(self, name='smtpd', port=1025):
         self.__name__ = name
@@ -82,6 +83,7 @@ class SMTPServerLayer(object):
         """
         self.smtpd.close()
         self.thread.join()
+        self.smtpd = None
 
     @property
     def server(self):

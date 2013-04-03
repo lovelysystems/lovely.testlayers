@@ -74,3 +74,32 @@ After tearDown() the server can't receive any more emails::
     ...
     error: [Errno 111] Connection refused
 
+Verification that setUp() and tearDown() work for subsequent calls::
+
+    >>> layer.setUp()
+
+    >>> _ = s.connect('localhost:1025')
+    >>> _ = s.sendmail('from@example.org', 'recipient@example.com', msg.as_string())
+    >>> print(mailbox.popleft())
+    Content-Type: text/plain; charset="utf-8"
+    MIME-Version: 1.0
+    Content-Transfer-Encoding: base64
+    Subject: first email
+    From: from@example.org
+    To: recipient@example.org
+    ...
+    <BLANKLINE>
+    ...
+
+    >>> _ = s.quit()
+    >>> layer.tearDown()
+    >>> _ = s.connect('localhost:1025')
+    Traceback (most recent call last):
+    ...
+    error: [Errno 111] Connection refused
+
+Before setUp() is called the ``server`` property is None::
+
+    >>> layer = mail.SMTPServerLayer(port=1025)
+    >>> layer.server is None
+    True
