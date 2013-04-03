@@ -5,6 +5,11 @@ Change History
 Unreleased
 ==========
 
+2013/04/03 0.4.3
+================
+
+ - SMTPServerLayer's is now None before calling setUp()
+
  - add additional tests for SMTPServerLayer
 
 2013/04/03 0.4.2
