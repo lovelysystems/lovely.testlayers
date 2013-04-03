@@ -64,7 +64,8 @@ class SMTPServerLayer(object):
 
     __bases__ = ()
 
-    def __init__(self, port=1025):
+    def __init__(self, name='smtpd', port=1025):
+        self.__name__ = name
         self.port = port
 
     def setUp(self):

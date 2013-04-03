@@ -5,7 +5,7 @@ Email/SMTP Test Layer
 This layer starts and stops a smtp daemon on given port (default 1025)::
 
     >>> from lovely.testlayers import mail
-    >>> layer = mail.SMTPServerLayer(1025)
+    >>> layer = mail.SMTPServerLayer(port=1025)
 
 To setup the layer call ``setUp()``::
 
