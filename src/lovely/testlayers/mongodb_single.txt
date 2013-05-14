@@ -5,8 +5,8 @@ MongoDB test layer » single server setup
 .. note::
     To run this test::
 
-        bin/buildout install mongodb-test
-        bin/test-mongodb --suite-name=mongodb_suite --test=mongodb_single
+        bin/buildout install mongodb mongodb-test
+        bin/test-mongodb --test=mongodb_single
 
 
 Introduction
@@ -21,10 +21,6 @@ The ``MongoLayer`` starts and stops a single MongoDB instance.
 
 Single server
 =============
-
-.. ifconfig:: False
-    >>> import os
-
 
 Warming up
 ----------

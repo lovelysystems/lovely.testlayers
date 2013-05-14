@@ -6,7 +6,7 @@ MongoDB test layer » replica set setup
     To run this test::
 
         bin/buildout install mongodb-test
-        bin/test-mongodb --suite-name=mongodb_suite --test=mongodb_replicaset
+        bin/test-mongodb --test=mongodb_replicaset
 
 
 Introduction
@@ -23,7 +23,6 @@ Replica Set
 ===========
 
 .. ifconfig:: False
-    >>> from pprint import pprint
     >>> from time import sleep
 
 Warming up
@@ -31,8 +30,8 @@ Warming up
 We create a new MongoDB layer:
 
     >>> from lovely.testlayers import mongodb
-    >>> #replicaset = mongodb.MongoReplicaSetLayer('mongodb.replicaset', mongod_bin = project_path('bin', 'mongod'))
-    >>> replicaset = mongodb.MongoReplicaSetLayer('mongodb.replicaset', mongod_bin = project_path('bin', 'mongod'), cleanup = False)
+    >>> replicaset = mongodb.MongoReplicaSetLayer('mongodb.replicaset', mongod_bin = project_path('bin', 'mongod'))
+    >>> #replicaset = mongodb.MongoReplicaSetLayer('mongodb.replicaset', mongod_bin = project_path('bin', 'mongod'), cleanup = False)
     >>> replicaset.storage_ports
     [37030, 37031, 37032]
 
@@ -66,8 +65,8 @@ Getting real
 Connect to it using a real MongoDB client.
     >>> from pymongo import ReplicaSetConnection, ReadPreference
     >>> mongo_uri = 'mongodb://localhost:37030,localhost:37031,localhost:37032/?replicaSet=mongodb.replicaset'
-    >>> #mongo_conn = ReplicaSetConnection(mongo_uri, read_preference = ReadPreference.SECONDARY, safe = True, w = "majority")
-    >>> mongo_conn = ReplicaSetConnection(mongo_uri, read_preference = ReadPreference.SECONDARY, safe = True, w = 3)
+    >>> mongo_conn = ReplicaSetConnection(mongo_uri, read_preference = ReadPreference.SECONDARY, safe = True, w = "majority")
+    >>> #mongo_conn = ReplicaSetConnection(mongo_uri, read_preference = ReadPreference.SECONDARY, safe = True, w = 3)
     >>> mongo_db = mongo_conn['foobar-db']
 
 Query operation counters upfront to compare them later.
@@ -111,8 +110,6 @@ ________
     >>> del mongo_conn
     >>> del mongo_db
 
-Let the database drop action propagate before continuing.
-    >>> #sleep(2)
 
 
 Layers

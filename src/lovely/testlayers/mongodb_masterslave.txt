@@ -15,16 +15,12 @@ Introduction
 | For information about MongoDB see:
 | http://en.wikipedia.org/wiki/Mongodb
 
-The ``MongoMasterSlaveLayer`` starts and stops two MongoDB
+The ``MongoMasterSlaveLayer`` starts and stops multiple MongoDB
 instances and configures a master-slave connection between them.
 
 
 Master/Slave
 ============
-
-.. ifconfig:: False
-    >>> from pprint import pprint
-    >>> from time import sleep
 
 Warming up
 ----------
@@ -60,7 +56,7 @@ Connect to it using a real MongoDB client.
     >>> mongo_db = mongo_conn['bar-db']
 
 Query operation counters upfront to compare them later.
-    >>> opcounters_before = masterslave.get_opcounters(nonmaster_is_secondary = True)['custom']
+    >>> opcounters_before = masterslave.get_opcounters()['custom']
 
 Insert some data.
     >>> document_id = mongo_db.foobar.insert({'hello': 'world'})
@@ -75,7 +71,7 @@ And query it.
 Prove that the ``write`` operation was dispatched to the ``PRIMARY``,
 while the ``read`` operation was dispatched to any ``SECONDARY``.
 
-    >>> opcounters_after = masterslave.get_opcounters(nonmaster_is_secondary = True)['custom']
+    >>> opcounters_after = masterslave.get_opcounters()['custom']
 
     >>> opcounters_after['primary.insert'] == opcounters_before['primary.insert'] + 1
     True

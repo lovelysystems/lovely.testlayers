@@ -59,6 +59,6 @@ setup(
         cassandra=['zc.buildout>=1.4'],
         pgsql=['psycopg2',
                'transaction'],
-        mongodb=['pymongo==2.1']),
+        mongodb=['pymongo==2.5.1']),
     install_requires = ['setuptools']
     )
