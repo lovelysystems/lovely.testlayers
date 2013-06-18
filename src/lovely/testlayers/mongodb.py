@@ -112,8 +112,10 @@ class MongoLayer(WorkDirectoryLayer, ServerLayer):
         self.wdNameSpecific = False
         self.setUpWD()
         self.workingdir = self.wdPath(self.__name__)
-        if self.cleanup:
-            self._workspace_cleanup()
+        # TODO:
+        # maybe differentiate between cleaning up the working directory
+        # on startup versus cleaning it up on teardown
+        self._workspace_cleanup()
         self._workspace_create()
 
     def setup_server(self):
@@ -165,11 +167,13 @@ class MongoLayer(WorkDirectoryLayer, ServerLayer):
         """
         pass
 
-    def _workspace_cleanup(self):
+    def _workspace_cleanup(self, force=False):
         """
         Removes the MongoDB "home" aka. workspace directory.
         """
-        os.path.exists(self.workingdir) and shutil.rmtree(self.workingdir)
+        if self.cleanup or force:
+            logger.info('Removing workspace directory "%s"' % self.workingdir)
+            os.path.exists(self.workingdir) and shutil.rmtree(self.workingdir)
 
     def _workspace_create(self):
         """
@@ -197,6 +201,15 @@ class MongoLayer(WorkDirectoryLayer, ServerLayer):
             argument_list.append(argument_item)
         return ' '.join(argument_list)
 
+    def tearDown(self):
+        """
+        Tear down the test layer. Remove the working directory.
+        """
+        ServerLayer.tearDown(self)
+        # TODO:
+        # maybe differentiate between cleaning up the working directory
+        # on startup versus cleaning it up on teardown
+        self._workspace_cleanup()
 
 class MongoMultiNodeLayer(CascadedLayer):
 
