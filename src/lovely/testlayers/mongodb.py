@@ -195,7 +195,9 @@ class MongoLayer(WorkDirectoryLayer, ServerLayer):
         """
         argument_list = []
         for key, value in arguments.iteritems():
-            if value is None or value == True:
+            if value is None or value == False:
+                continue
+            elif value == True:
                 argument_item = '--%s' % key
             else:
                 argument_item = '--%s="%s"' % (key, value)
@@ -368,11 +370,11 @@ class MongoMasterSlaveLayer(MongoMultiNodeLayer):
         # layers for multiple MongoDB nodes
         for number, (layer_name, storage_port) in enumerate(self.layer_options):
             if number == 0:
-                extra_options = {'master': None}
+                extra_options = {'master': True}
             else:
                 master = '{0}:{1}'.format(self.hostname, str(self.master_port))
                 extra_options = {
-                    'slave': None,
+                    'slave': True,
                     'source': master,
                     'slavedelay': 0
                 }
@@ -622,9 +624,8 @@ class MongoReplicaSetInitLayer(object):
         """
         State machine logic which tracks the boot process
         of a MongoDB multi-node/replica-set cluster.
-        Inquiries MongoDB, checks responses, sends log messages
-        and runs ``replSetInitiate`` if necessary.
-        Returns ``True`` when the replica set is fully established.
+        Inquires MongoDB using ``replSetGetStatus`` and checks responses.
+        Returns ``True`` if replica set is fully established.
         """
 
         from pymongo import Connection
