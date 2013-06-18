@@ -133,6 +133,7 @@ class MongoLayer(WorkDirectoryLayer, ServerLayer):
             'logpath': self.log_file,
             'rest': True,
             'noprealloc': True,
+            'smallfiles': True,
         }
         all_options = {}
         all_options.update(self.default_options)
