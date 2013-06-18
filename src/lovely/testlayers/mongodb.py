@@ -30,30 +30,32 @@ Various flavors of test layers for MongoDB:
   well as a ``mongos`` instance and configures sharding between them. [TODO]
 """
 
-import os, sys
+import os
 import time
 import shutil
 import logging
-import telnetlib
 from layer import WorkDirectoryLayer, CascadedLayer
 from server import ServerLayer
 
 
 # setup logging
 class NonDuplicateLogFilter(logging.Filter):
+
     def __init__(self):
         self.last_message = None
+
     def filter(self, record):
         outcome = self.last_message != record.msg
         self.last_message = record.msg
         return outcome
+
+
 console = logging.StreamHandler()
 console.setFormatter(
     logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s'))
 logger = logging.getLogger(__name__)
 logger.addHandler(console)
 logger.addFilter(NonDuplicateLogFilter())
-#logger.setLevel(logging.DEBUG)
 logger.setLevel(logging.INFO)
 
 
@@ -147,7 +149,6 @@ class MongoLayer(WorkDirectoryLayer, ServerLayer):
             (self.hostname, self.console_port),
         ]
 
-
     def start(self):
         """
         Propagates start operation to ``ServerLayer``.
@@ -190,7 +191,7 @@ class MongoLayer(WorkDirectoryLayer, ServerLayer):
         """
         argument_list = []
         for key, value in arguments.iteritems():
-            if value is None or value == True:
+            if value is None or value is True:
                 argument_item = '--%s' % key
             else:
                 argument_item = '--%s="%s"' % (key, value)
@@ -436,7 +437,6 @@ class MongoReplicaSetLayer(MongoMultiNodeLayer):
             MongoReplicaSetInitLayer(self.name + '.init', self.replicaset_name,
                 self.storage_ports))
 
-
     def _get_replset_option(self, exclude=None):
         """
         Helper function to compute value of the ``--replSet``
@@ -452,12 +452,13 @@ class MongoReplicaSetLayer(MongoMultiNodeLayer):
         return '%s/%s' % (self.replicaset_name, ','.join(nodelist))
 
 
-
 class MongoReplicasetInitError(Exception):
     pass
 
+
 class MongoReplicasetNodenameError(Exception):
     pass
+
 
 class MongoReplicaSetInitLayer(object):
     """
@@ -497,7 +498,7 @@ class MongoReplicaSetInitLayer(object):
         self.timeout = timeout
         self.hostname = hostname
         self.starttime = 0
-        logger.info('Initializing MongoReplicaSetInitLayer') 
+        logger.info('Initializing MongoReplicaSetInitLayer')
 
     def setUp(self):
         """
@@ -519,8 +520,8 @@ class MongoReplicaSetInitLayer(object):
         Also accounts for timeout.
         """
 
-        logger.info('Waiting for replica set to be fully initialized, ' + \
-            'this might take up to one minute.')
+        logger.info('Waiting for replica set to be fully initialized, ' +
+                    'this might take up to one minute.')
         # wait for nodes to settle, damn timing-issues
         time.sleep(3)
 
@@ -545,7 +546,6 @@ class MongoReplicaSetInitLayer(object):
             msg = 'Error while initializing the replica set (timed out)'
             logger.error(msg)
             raise MongoReplicasetInitError(msg)
-
 
     def replicaset_initiate(self):
         """
@@ -614,6 +614,7 @@ class MongoReplicaSetInitLayer(object):
         """
 
         from pymongo import Connection
+        from pymongo.errors import OperationFailure
         host = '{0}:{1}'.format(self.hostname, self.ports[-1])
         mongo_conn = Connection(host, safe = True)
 
@@ -621,7 +622,7 @@ class MongoReplicaSetInitLayer(object):
             result = mongo_conn.admin.command('replSetGetStatus', check=False)
             startup_status = result.get('startupStatus')
             replset_name = result.get('set')
-        except pymongo.errors.OperationalFailure, msg:
+        except OperationFailure, msg:
             logger.error(msg)
             return False
 
