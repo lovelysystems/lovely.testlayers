@@ -24,14 +24,14 @@ Single server
 
 Warming up
 ----------
-We create a new MongoDB layer:
+We create a new MongoDB layer::
 
     >>> from lovely.testlayers import mongodb
     >>> mongo = mongodb.MongoLayer('mongodb.single', mongod_bin = project_path('bin', 'mongod'))
     >>> mongo.storage_port
     37017
 
-So let's bootstrap the server.
+So let's bootstrap the server::
 
     >>> mongo.setUp()
 
@@ -39,7 +39,7 @@ So let's bootstrap the server.
 Pre flight checks
 -----------------
 Now the MongoDB server is up and running. We test this by connecting
-to the storage port via telnet.
+to the storage port via telnet::
 
     >>> import telnetlib
     >>> tn = telnetlib.Telnet('localhost', mongo.storage_port)
@@ -49,22 +49,26 @@ to the storage port via telnet.
 Getting real
 ------------
 
-Connect to it using a real MongoDB client.
+Connect to it using a real MongoDB client::
+
     >>> from pymongo import Connection
     >>> mongo_conn = Connection('localhost:37017', safe = True)
     >>> mongo_db = mongo_conn['foo-db']
 
-Insert some data.
+Insert some data::
+
     >>> document_id = mongo_db.foobar.insert({'hello': 'world'})
     >>> document_id
     ObjectId('...')
 
-And query it.
+And query it::
+
     >>> document = mongo_db.foobar.find_one(document_id)
     >>> document
     {u'_id': ObjectId('...'), u'hello': u'world'}
 
-Another query.
+Another query::
+
     >>> mongo_db.foobar.find({'hello': 'world'})[0] == document
     True
 
@@ -83,7 +87,8 @@ ________
 
 Layers
 ______
-The connection is refused after teardown.
+
+The connection is refused after teardown::
 
     >>> mongo.tearDown()
 

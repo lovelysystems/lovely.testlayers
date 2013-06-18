@@ -7,7 +7,6 @@ Unreleased
 
  - Add MongoLayer
 
-
 2013/04/03 0.4.3
 ================
 

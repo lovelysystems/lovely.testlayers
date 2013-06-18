@@ -27,7 +27,8 @@ Replica Set
 
 Warming up
 ----------
-We create a new MongoDB layer:
+
+We create a new MongoDB layer::
 
     >>> from lovely.testlayers import mongodb
     >>> replicaset = mongodb.MongoReplicaSetLayer('mongodb.replicaset', mongod_bin = project_path('bin', 'mongod'))
@@ -36,7 +37,7 @@ We create a new MongoDB layer:
     [37030, 37031, 37032]
 
 
-So let's bootstrap the servers.
+So let's bootstrap the servers::
 
     >>> from zope.testrunner.runner import gather_layers
     >>> layers = []
@@ -45,7 +46,7 @@ So let's bootstrap the servers.
     ...     layer.setUp()
 
 
-And check if the replica set got initiated properly.
+And check if the replica set got initiated properly::
 
     >>> from pymongo import Connection
     >>> mongo_conn = Connection('localhost:37030', safe = True)
@@ -54,7 +55,8 @@ And check if the replica set got initiated properly.
     u'mongodb.replicaset'
 
 
-Ready.
+Ready::
+
     >>> mongo_conn.disconnect()
     >>> del mongo_conn
 
@@ -62,29 +64,33 @@ Ready.
 Getting real
 ------------
 
-Connect to it using a real MongoDB client.
+Connect to it using a real MongoDB client::
+
     >>> from pymongo import ReplicaSetConnection, ReadPreference
     >>> mongo_uri = 'mongodb://localhost:37030,localhost:37031,localhost:37032/?replicaSet=mongodb.replicaset'
     >>> mongo_conn = ReplicaSetConnection(mongo_uri, read_preference = ReadPreference.SECONDARY, safe = True, w = "majority")
     >>> #mongo_conn = ReplicaSetConnection(mongo_uri, read_preference = ReadPreference.SECONDARY, safe = True, w = 3)
     >>> mongo_db = mongo_conn['foobar-db']
 
-Query operation counters upfront to compare them later.
+Query operation counters upfront to compare them later::
+
     >>> sleep(1)
     >>> opcounters_before = replicaset.get_opcounters()['custom']
 
-Insert some data.
+Insert some data::
+
     >>> document_id = mongo_db.foobar.insert({'hello': 'world'})
     >>> document_id
     ObjectId('...')
 
-And query it.
+And query it::
+
     >>> document = mongo_db.foobar.find_one(document_id)
     >>> document
     {u'_id': ObjectId('...'), u'hello': u'world'}
 
 Prove that the ``write`` operation was dispatched to the ``PRIMARY``,
-while the ``read`` operation was dispatched to any ``SECONDARY``.
+while the ``read`` operation was dispatched to any ``SECONDARY``::
 
     >>> sleep(1)
     >>> opcounters_after = replicaset.get_opcounters()['custom']
@@ -111,10 +117,10 @@ ________
     >>> del mongo_db
 
 
-
 Layers
 ______
-Connections are refused after teardown.
+
+Connections are refused after teardown::
 
     >>> for layer in layers:
     ...     layer.tearDown()

@@ -24,14 +24,15 @@ Master/Slave
 
 Warming up
 ----------
-We create a new MongoDB layer:
+
+We create a new MongoDB layer::
 
     >>> from lovely.testlayers import mongodb
     >>> masterslave = mongodb.MongoMasterSlaveLayer('mongodb.masterslave', mongod_bin = project_path('bin', 'mongod'))
     >>> masterslave.storage_ports
     [37020, 37021, 37022]
 
-So let's bootstrap the servers.
+So let's bootstrap the servers::
 
     >>> from zope.testrunner.runner import gather_layers
     >>> layers = []
@@ -43,7 +44,8 @@ So let's bootstrap the servers.
 Getting real
 ------------
 
-Connect to it using a real MongoDB client.
+Connect to it using a real MongoDB client::
+
     >>> from pymongo import Connection, ReadPreference
     >>> from pymongo.master_slave_connection import MasterSlaveConnection
     >>> mongo_conn = MasterSlaveConnection(
@@ -55,21 +57,24 @@ Connect to it using a real MongoDB client.
     ... )
     >>> mongo_db = mongo_conn['bar-db']
 
-Query operation counters upfront to compare them later.
+Query operation counters upfront to compare them later::
+
     >>> opcounters_before = masterslave.get_opcounters()['custom']
 
-Insert some data.
+Insert some data::
+
     >>> document_id = mongo_db.foobar.insert({'hello': 'world'})
     >>> document_id
     ObjectId('...')
 
-And query it.
+And query it::
+
     >>> document = mongo_db.foobar.find_one(document_id)
     >>> document
     {u'_id': ObjectId('...'), u'hello': u'world'}
 
 Prove that the ``write`` operation was dispatched to the ``PRIMARY``,
-while the ``read`` operation was dispatched to any ``SECONDARY``.
+while the ``read`` operation was dispatched to any ``SECONDARY``::
 
     >>> opcounters_after = masterslave.get_opcounters()['custom']
 
@@ -97,7 +102,8 @@ ________
 
 Layers
 ______
-Connections are refused after teardown.
+
+Connections are refused after teardown::
 
     >>> for layer in layers:
     ...     layer.tearDown()
