@@ -5,6 +5,9 @@ Change History
 Unreleased
 ==========
 
+2013/06/19 0.5.0
+================
+
  - Add MongoLayer
 
 2013/04/03 0.4.3
