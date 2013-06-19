@@ -52,7 +52,7 @@ Getting real
 Connect to it using a real MongoDB client::
 
     >>> from pymongo import Connection
-    >>> mongo_conn = Connection('localhost:37017', safe = True)
+    >>> mongo_conn = Connection('localhost:37017', safe=True)
     >>> mongo_db = mongo_conn['foo-db']
 
 Insert some data::

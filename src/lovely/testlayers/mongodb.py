@@ -114,8 +114,10 @@ class MongoLayer(WorkDirectoryLayer, ServerLayer):
         self.wdNameSpecific = False
         self.setUpWD()
         self.workingdir = self.wdPath(self.__name__)
-        if self.cleanup:
-            self._workspace_cleanup()
+        # TODO:
+        # maybe differentiate between cleaning up the working directory
+        # on startup versus cleaning it up on teardown
+        self._workspace_cleanup()
         self._workspace_create()
 
     def setup_server(self):
@@ -133,6 +135,7 @@ class MongoLayer(WorkDirectoryLayer, ServerLayer):
             'logpath': self.log_file,
             'rest': True,
             'noprealloc': True,
+            'smallfiles': True,
         }
         all_options = {}
         all_options.update(self.default_options)
@@ -166,11 +169,13 @@ class MongoLayer(WorkDirectoryLayer, ServerLayer):
         """
         pass
 
-    def _workspace_cleanup(self):
+    def _workspace_cleanup(self, force=False):
         """
         Removes the MongoDB "home" aka. workspace directory.
         """
-        os.path.exists(self.workingdir) and shutil.rmtree(self.workingdir)
+        if self.cleanup or force:
+            logger.info('Removing workspace directory "%s"' % self.workingdir)
+            os.path.exists(self.workingdir) and shutil.rmtree(self.workingdir)
 
     def _workspace_create(self):
         """
@@ -191,12 +196,24 @@ class MongoLayer(WorkDirectoryLayer, ServerLayer):
         """
         argument_list = []
         for key, value in arguments.iteritems():
-            if value is None or value is True:
+            if not value:
+                continue
+            elif value is True:
                 argument_item = '--%s' % key
             else:
                 argument_item = '--%s="%s"' % (key, value)
             argument_list.append(argument_item)
         return ' '.join(argument_list)
+
+    def tearDown(self):
+        """
+        Tear down the test layer. Remove the working directory.
+        """
+        ServerLayer.tearDown(self)
+        # TODO:
+        # maybe differentiate between cleaning up the working directory
+        # on startup versus cleaning it up on teardown
+        self._workspace_cleanup()
 
 
 class MongoMultiNodeLayer(CascadedLayer):
@@ -355,11 +372,11 @@ class MongoMasterSlaveLayer(MongoMultiNodeLayer):
         # layers for multiple MongoDB nodes
         for number, (layer_name, storage_port) in enumerate(self.layer_options):
             if number == 0:
-                extra_options = {'master': None}
+                extra_options = {'master': True}
             else:
                 master = '{0}:{1}'.format(self.hostname, str(self.master_port))
                 extra_options = {
-                    'slave': None,
+                    'slave': True,
                     'source': master,
                     'slavedelay': 0
                 }
@@ -608,9 +625,8 @@ class MongoReplicaSetInitLayer(object):
         """
         State machine logic which tracks the boot process
         of a MongoDB multi-node/replica-set cluster.
-        Inquiries MongoDB, checks responses, sends log messages
-        and runs ``replSetInitiate`` if necessary.
-        Returns ``True`` when the replica set is fully established.
+        Inquires MongoDB using ``replSetGetStatus`` and checks responses.
+        Returns ``True`` if replica set is fully established.
         """
 
         from pymongo import Connection

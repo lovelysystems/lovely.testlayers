@@ -5,8 +5,8 @@ MongoDB test layer » master/slave setup
 .. note::
     To run this test::
 
-        bin/buildout install mongodb-test
-        bin/test-mongodb --suite-name=mongodb_suite --test=mongodb_masterslave
+        bin/buildout install mongodb mongodb-test
+        bin/test-mongodb --test=mongodb_masterslave
 
 
 Introduction
@@ -49,7 +49,7 @@ Connect to it using a real MongoDB client::
     >>> from pymongo import Connection, ReadPreference
     >>> from pymongo.master_slave_connection import MasterSlaveConnection
     >>> mongo_conn = MasterSlaveConnection(
-    ...     Connection('localhost:37020', safe = True, w = 3),
+    ...     Connection('localhost:37020', safe=True, w=3),
     ...     [
     ...         Connection('localhost:37021', read_preference = ReadPreference.SECONDARY),
     ...         Connection('localhost:37022', read_preference = ReadPreference.SECONDARY),

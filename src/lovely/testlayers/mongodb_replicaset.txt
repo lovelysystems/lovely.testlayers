@@ -5,7 +5,7 @@ MongoDB test layer » replica set setup
 .. note::
     To run this test::
 
-        bin/buildout install mongodb-test
+        bin/buildout install mongodb mongodb-test
         bin/test-mongodb --test=mongodb_replicaset
 
 
@@ -49,7 +49,7 @@ So let's bootstrap the servers::
 And check if the replica set got initiated properly::
 
     >>> from pymongo import Connection
-    >>> mongo_conn = Connection('localhost:37030', safe = True)
+    >>> mongo_conn = Connection('localhost:37030', safe=True)
 
     >>> mongo_conn.admin.command('replSetGetStatus').get('set')
     u'mongodb.replicaset'
@@ -68,8 +68,7 @@ Connect to it using a real MongoDB client::
 
     >>> from pymongo import ReplicaSetConnection, ReadPreference
     >>> mongo_uri = 'mongodb://localhost:37030,localhost:37031,localhost:37032/?replicaSet=mongodb.replicaset'
-    >>> mongo_conn = ReplicaSetConnection(mongo_uri, read_preference = ReadPreference.SECONDARY, safe = True, w = "majority")
-    >>> #mongo_conn = ReplicaSetConnection(mongo_uri, read_preference = ReadPreference.SECONDARY, safe = True, w = 3)
+    >>> mongo_conn = ReplicaSetConnection(mongo_uri, read_preference=ReadPreference.SECONDARY, safe=True, w="majority")
     >>> mongo_db = mongo_conn['foobar-db']
 
 Query operation counters upfront to compare them later::
