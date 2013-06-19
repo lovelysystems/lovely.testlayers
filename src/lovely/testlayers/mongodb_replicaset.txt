@@ -1,0 +1,136 @@
+======================================
+MongoDB test layer » replica set setup
+======================================
+
+.. note::
+    To run this test::
+
+        bin/buildout install mongodb mongodb-test
+        bin/test-mongodb --test=mongodb_replicaset
+
+
+Introduction
+============
+
+| For information about MongoDB see:
+| http://en.wikipedia.org/wiki/Mongodb
+
+The ``MongoReplicaSetLayer`` starts and stops multiple
+MongoDB instances and configures a replica set on top of them.
+
+
+Replica Set
+===========
+
+.. ifconfig:: False
+    >>> from time import sleep
+
+Warming up
+----------
+
+We create a new MongoDB layer::
+
+    >>> from lovely.testlayers import mongodb
+    >>> replicaset = mongodb.MongoReplicaSetLayer('mongodb.replicaset', mongod_bin = project_path('bin', 'mongod'))
+    >>> #replicaset = mongodb.MongoReplicaSetLayer('mongodb.replicaset', mongod_bin = project_path('bin', 'mongod'), cleanup = False)
+    >>> replicaset.storage_ports
+    [37030, 37031, 37032]
+
+
+So let's bootstrap the servers::
+
+    >>> from zope.testrunner.runner import gather_layers
+    >>> layers = []
+    >>> gather_layers(replicaset, layers)
+    >>> for layer in layers:
+    ...     layer.setUp()
+
+
+And check if the replica set got initiated properly::
+
+    >>> from pymongo import Connection
+    >>> mongo_conn = Connection('localhost:37030', safe=True)
+
+    >>> mongo_conn.admin.command('replSetGetStatus').get('set')
+    u'mongodb.replicaset'
+
+
+Ready::
+
+    >>> mongo_conn.disconnect()
+    >>> del mongo_conn
+
+
+Getting real
+------------
+
+Connect to it using a real MongoDB client::
+
+    >>> from pymongo import ReplicaSetConnection, ReadPreference
+    >>> mongo_uri = 'mongodb://localhost:37030,localhost:37031,localhost:37032/?replicaSet=mongodb.replicaset'
+    >>> mongo_conn = ReplicaSetConnection(mongo_uri, read_preference=ReadPreference.SECONDARY, safe=True, w="majority")
+    >>> mongo_db = mongo_conn['foobar-db']
+
+Query operation counters upfront to compare them later::
+
+    >>> sleep(1)
+    >>> opcounters_before = replicaset.get_opcounters()['custom']
+
+Insert some data::
+
+    >>> document_id = mongo_db.foobar.insert({'hello': 'world'})
+    >>> document_id
+    ObjectId('...')
+
+And query it::
+
+    >>> document = mongo_db.foobar.find_one(document_id)
+    >>> document
+    {u'_id': ObjectId('...'), u'hello': u'world'}
+
+Prove that the ``write`` operation was dispatched to the ``PRIMARY``,
+while the ``read`` operation was dispatched to any ``SECONDARY``::
+
+    >>> sleep(1)
+    >>> opcounters_after = replicaset.get_opcounters()['custom']
+
+    >>> opcounters_after['primary.insert'] == opcounters_before['primary.insert'] + 1
+    True
+
+    >>> assert \
+    ...     opcounters_after['secondary.query'] == opcounters_before['secondary.query'] + 1, \
+    ...     "ERROR: expected 'after == before + 1', but got 'after=%s, before=%s'" % \
+    ...         (opcounters_after['secondary.query'], opcounters_before['secondary.query'])
+
+
+
+Clean up
+--------
+
+Database
+________
+
+    >>> mongo_conn.drop_database('foobar-db')
+    >>> mongo_conn.disconnect()
+    >>> del mongo_conn
+    >>> del mongo_db
+
+
+Layers
+______
+
+Connections are refused after teardown::
+
+    >>> for layer in layers:
+    ...     layer.tearDown()
+
+    >>> def check_down(*ports):
+    ...     for port in ports:
+    ...         try:
+    ...             tn = telnetlib.Telnet('localhost', port)
+    ...             tn.close()
+    ...         except:
+    ...             yield True
+
+    >>> all(check_down(replicaset.storage_ports))
+    True

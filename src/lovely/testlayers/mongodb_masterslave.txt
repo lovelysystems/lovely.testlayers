@@ -1,0 +1,120 @@
+=======================================
+MongoDB test layer » master/slave setup
+=======================================
+
+.. note::
+    To run this test::
+
+        bin/buildout install mongodb mongodb-test
+        bin/test-mongodb --test=mongodb_masterslave
+
+
+Introduction
+============
+
+| For information about MongoDB see:
+| http://en.wikipedia.org/wiki/Mongodb
+
+The ``MongoMasterSlaveLayer`` starts and stops multiple MongoDB
+instances and configures a master-slave connection between them.
+
+
+Master/Slave
+============
+
+Warming up
+----------
+
+We create a new MongoDB layer::
+
+    >>> from lovely.testlayers import mongodb
+    >>> masterslave = mongodb.MongoMasterSlaveLayer('mongodb.masterslave', mongod_bin = project_path('bin', 'mongod'))
+    >>> masterslave.storage_ports
+    [37020, 37021, 37022]
+
+So let's bootstrap the servers::
+
+    >>> from zope.testrunner.runner import gather_layers
+    >>> layers = []
+    >>> gather_layers(masterslave, layers)
+    >>> for layer in layers:
+    ...     layer.setUp()
+
+
+Getting real
+------------
+
+Connect to it using a real MongoDB client::
+
+    >>> from pymongo import Connection, ReadPreference
+    >>> from pymongo.master_slave_connection import MasterSlaveConnection
+    >>> mongo_conn = MasterSlaveConnection(
+    ...     Connection('localhost:37020', safe=True, w=3),
+    ...     [
+    ...         Connection('localhost:37021', read_preference = ReadPreference.SECONDARY),
+    ...         Connection('localhost:37022', read_preference = ReadPreference.SECONDARY),
+    ...     ]
+    ... )
+    >>> mongo_db = mongo_conn['bar-db']
+
+Query operation counters upfront to compare them later::
+
+    >>> opcounters_before = masterslave.get_opcounters()['custom']
+
+Insert some data::
+
+    >>> document_id = mongo_db.foobar.insert({'hello': 'world'})
+    >>> document_id
+    ObjectId('...')
+
+And query it::
+
+    >>> document = mongo_db.foobar.find_one(document_id)
+    >>> document
+    {u'_id': ObjectId('...'), u'hello': u'world'}
+
+Prove that the ``write`` operation was dispatched to the ``PRIMARY``,
+while the ``read`` operation was dispatched to any ``SECONDARY``::
+
+    >>> opcounters_after = masterslave.get_opcounters()['custom']
+
+    >>> opcounters_after['primary.insert'] == opcounters_before['primary.insert'] + 1
+    True
+
+    >>> assert \
+    ...     opcounters_after['secondary.query'] == opcounters_before['secondary.query'] + 1, \
+    ...     "ERROR: expected 'after == before + 1', but got 'after=%s, before=%s'" % \
+    ...         (opcounters_after['secondary.query'], opcounters_before['secondary.query'])
+
+
+
+Clean up
+--------
+
+Database
+________
+
+    >>> mongo_conn.drop_database('bar-db')
+    >>> mongo_conn.disconnect()
+    >>> del mongo_conn
+    >>> del mongo_db
+
+
+Layers
+______
+
+Connections are refused after teardown::
+
+    >>> for layer in layers:
+    ...     layer.tearDown()
+
+    >>> def check_down(*ports):
+    ...     for port in ports:
+    ...         try:
+    ...             tn = telnetlib.Telnet('localhost', port)
+    ...             tn.close()
+    ...         except:
+    ...             yield True
+
+    >>> all(check_down(masterslave.storage_ports))
+    True
