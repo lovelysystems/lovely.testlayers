@@ -26,6 +26,7 @@ import util
 import types
 import os
 
+
 class ServerLayer(object):
 
     """A layer that starts/stops an subprocess and optionally checks
@@ -75,7 +76,6 @@ class ServerLayer(object):
     def setUp(self):
         self.start()
 
-
     def tearDown(self):
         self.stop()
         to_stop = deque(self.servers)
@@ -90,3 +90,51 @@ class ServerLayer(object):
                 logging.info('Server stopped %s:%s', *server)
 
 
+class LoggingServerLayer(ServerLayer):
+    """ a Server Layer which which redirects stdout and stderr to a log file.
+    """
+
+    def __init__(self, name, servers=[], start_cmd=None, subprocess_args={}, stdout=None, stderr=None):
+        super(LoggingServerLayer, self).__init__(name, servers, start_cmd, subprocess_args)
+        self.stdout = None
+        self.stderr = None
+        if stdout:
+            self.stdout = self.getFileObject(stdout)
+        if stderr:
+            self.stderr = self.getFileObject(stderr, 'stderr')
+
+    def setUp(self):
+        if self.stdout:
+            self.stdout = self._reopen(self.stdout)
+        if self.stderr:
+            self.stderr = self._reopen(self.stderr, 'stderr')
+        super(LoggingServerLayer, self).setUp()
+
+    def stop(self):
+        super(LoggingServerLayer, self).stop()
+        if self.stdout and not self.stdout.closed:
+            self.stdout.close()
+        if self.stderr and not self.stderr.closed:
+            self.stderr.close()
+
+    def getFileObject(self, path, ident='stdout'):
+        """ checks if the object is a file path or already a file object
+            If the object is a file path, a file object for the given path gets
+            returned.
+            If the path is a directory, also a file object gets created at the
+            given path """
+        if isinstance(path, file):
+            return path
+        elif isinstance(path, str):
+            if os.path.isdir(path):
+                path = os.path.join(path, '%s_%s' % (self.__name__, ident))
+            return open(path, 'w+')
+        return None
+
+    def _reopen(self, f, ident='stdout'):
+        """ checks if a file is closed and reopen it if so.
+            Also the file gets added to the subprocess_args. """
+        if f.closed:
+            f = open(f.name, 'w+')
+        self.subprocess_args[ident] = f
+        return f

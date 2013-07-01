@@ -19,6 +19,7 @@
 import unittest
 import doctest
 from layer import cleanAll
+import subprocess
 import os
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -29,15 +30,28 @@ def project_path(*path):
         os.path.dirname(os.path.dirname(os.path.dirname(here))),
         *path)
 
+
+def run(cmd, *args):
+    p = subprocess.Popen(cmd, shell=True)
+    stdout, stderr = p.communicate()
+    if p.returncode > 0:
+        return stdout, stderr
+        raise RuntimeError("Command Failed %s", p.returncode)
+    return stdout, stderr
+
+
 def setUp(test):
     test.globs['project_path'] = project_path
+    test.globs['run'] = run
+
 
 def cleanWorkDirs(test):
     setUp(test)
     cleanAll()
 
+
 def create_suite(testfile, setUp=setUp,
-                 optionflags=doctest.NORMALIZE_WHITESPACE|doctest.ELLIPSIS,
+                 optionflags=doctest.NORMALIZE_WHITESPACE | doctest.ELLIPSIS,
                  level=None, **kwargs):
     s = doctest.DocFileSuite(
         testfile, setUp=setUp,
@@ -47,6 +61,7 @@ def create_suite(testfile, setUp=setUp,
     if level:
         s.level = level
     return s
+
 
 def test_suite():
     suites = (
@@ -62,6 +77,7 @@ def test_suite():
         create_suite('nginx.txt')
         )
     return unittest.TestSuite(suites)
+
 
 def mongodb_suite():
     """
@@ -80,4 +96,3 @@ def mongodb_suite():
 
 if __name__ == '__main__':
     unittest.main(defaultTest='test_suite')
-

@@ -8,6 +8,8 @@ Unreleased
 Unreleased
 ==========
 
+ - created a `LoggingServerLayer` which pipes stderr and stdout to a log file
+
  - included memcached in buildout
 
  - use openresty instead of nginx
