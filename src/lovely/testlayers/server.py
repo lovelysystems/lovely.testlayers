@@ -34,11 +34,13 @@ class ServerLayer(object):
 
     __bases__ = ()
 
-    def __init__(self, name, servers=[], start_cmd=None, subprocess_args={},
+    def __init__(self, name, servers=[], start_cmd=None, subprocess_args=None,
                  stdout=None, stderr=None):
         self.__name__ = name
         self.servers = []
         self.start_cmd = start_cmd
+        if not subprocess_args:
+            subprocess_args = {}
         self.subprocess_args = subprocess_args
         for server in servers:
             host, port = server.split(':')
@@ -52,6 +54,10 @@ class ServerLayer(object):
 
     def start(self):
         assert self.start_cmd, 'No start command defined'
+        if self.stdout:
+            self.stdout = self._reopen(self.stdout)
+        if self.stderr:
+            self.stderr = self._reopen(self.stderr, 'stderr')
         if type(self.start_cmd) in types.StringTypes:
             cmd = shlex.split(self.start_cmd)
         else:
@@ -85,10 +91,6 @@ class ServerLayer(object):
             self.stderr.close()
 
     def setUp(self):
-        if self.stdout:
-            self.stdout = self._reopen(self.stdout)
-        if self.stderr:
-            self.stderr = self._reopen(self.stderr, 'stderr')
         self.start()
 
     def tearDown(self):

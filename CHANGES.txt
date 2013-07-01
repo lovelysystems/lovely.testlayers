@@ -2,6 +2,11 @@
 Change History
 ==============
 
+2013/07/01 0.5.3
+================
+
+ - ServerLayer: reopen logfile in start instead of setUp
+
 2013/07/01 0.5.2
 ================
 
