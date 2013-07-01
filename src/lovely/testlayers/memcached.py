@@ -25,11 +25,15 @@ class MemcachedLayer(ServerLayer):
 
     __bases__ = ()
 
-    def __init__(self, name, port=11222, connections=10, path=None):
+    def __init__(self, name, port=11222, connections=10, path=None,
+                 subprocess_args={}, stdout=None, stderr=None):
         self.port = port
         if not path:
             path = 'memcached'
         start_cmd = '%s -p %s -c %s' % (path, self.port, connections)
         super(MemcachedLayer, self).__init__(
             name, servers=['localhost:%s' % port],
-            start_cmd=start_cmd)
+            start_cmd=start_cmd,
+            subprocess_args=subprocess_args,
+            stdout=stdout,
+            stderr=stderr)

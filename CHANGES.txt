@@ -8,6 +8,8 @@ Unreleased
 Unreleased
 ==========
 
+ - It's possible to specify logging of the ServerLayer
+
  - included memcached in buildout
 
  - use openresty instead of nginx

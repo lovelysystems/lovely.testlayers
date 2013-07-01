@@ -33,3 +33,96 @@ If the command startup fails an error gets raised.
     Traceback (most recent call last):
     ...
     SystemError: Failed to start server rc=1 cmd=false
+
+Logging
+-------
+
+It's possible to specify a logfile for stdout and stderr::
+
+    >>> import os
+    >>> logPath = project_path('var', 'log', 'stdout.log')
+    >>> sl = server.ServerLayer('sl2', servers=['localhost:33333'],
+    ...                                start_cmd='nc -k -l 33333',
+    ...                                stdout=logPath)
+
+Setup the layer starts the server::
+
+    >>> sl.setUp()
+
+Get the current position of stdout::
+
+    >>> pos = sl.stdout.tell()
+
+Send a message to the server::
+
+    >>> _ = run('echo "GET / HTTP/1.0" | nc localhost 33333')
+
+The message gets logged to stdout::
+
+    >>> sl.stdout.seek(pos)
+    >>> print sl.stdout.read()
+    GET / HTTP/1.0
+
+After teardown the file gets closed::
+
+    >>> sl.tearDown()
+    >>> sl.stdout.closed
+    True
+
+After calling setUp again, the file gets repoened::
+
+    >>> sl.setUp()
+    >>> pos = sl.stdout.tell()
+    >>> _ = run('echo "Hi" | nc localhost 33333')
+    >>> sl.stdout.seek(pos)
+    >>> print sl.stdout.read()
+    Hi
+    >>> sl.tearDown()
+
+It's also possible to initialize a ServerLayer with a file object::
+
+    >>> path = project_path('var', 'log', 'stdout_2.log')
+    >>> f = open(path, 'w+')
+    >>> sl = server.ServerLayer('sl2', servers=['localhost:33333'],
+    ...                                start_cmd='nc -k -l 33333',
+    ...                                stdout=f)
+    >>> sl.setUp()
+
+    >>> pos = sl.stdout.tell()
+    >>> _ = run('echo "Test" | nc localhost 33333')
+    >>> sl.stdout.seek(pos)
+    >>> print sl.stdout.read()
+    Test
+
+    >>> sl.tearDown()
+
+After teardown the file gets closed::
+
+    >>> sl.stdout.closed
+    True
+
+The file gets reopened after setUp::
+
+    >>> sl.setUp()
+    >>> pos = sl.stdout.tell()
+    >>> _ = run('echo "File gets reopened" | nc localhost 33333')
+    >>> sl.stdout.seek(pos)
+    >>> print sl.stdout.read()
+    File gets reopened
+    >>> sl.tearDown()
+
+If a directory gets specified, a logfile within the directory gets created::
+
+    >>> path = project_path('var', 'log')
+    >>> sl = server.ServerLayer('myLayer', servers=['localhost:33333'],
+    ...                                start_cmd='nc -k -l 33333',
+    ...                                stdout=path,
+    ...                                stderr=path)
+    >>> sl.setUp()
+    >>> sl.stdout.name
+    '...var/log/myLayer_stdout'
+
+    >>> sl.stderr.name
+    '...var/log/myLayer_stderr'
+
+    >>> sl.tearDown()
