@@ -5,6 +5,15 @@ Change History
 Unreleased
 ==========
 
+Unreleased
+==========
+
+ - included memcached in buildout
+
+ - use openresty instead of nginx
+
+ - nailed versions of dependencies
+
 2013/06/19 0.5.0
 ================
 

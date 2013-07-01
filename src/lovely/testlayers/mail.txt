@@ -72,7 +72,7 @@ After tearDown() the server can't receive any more emails::
     >>> _ = s.connect('localhost:1025')
     Traceback (most recent call last):
     ...
-    error: [Errno 111] Connection refused
+    error: [Errno ...] Connection refused
 
 Verification that setUp() and tearDown() work for subsequent calls::
 
@@ -96,7 +96,7 @@ Verification that setUp() and tearDown() work for subsequent calls::
     >>> _ = s.connect('localhost:1025')
     Traceback (most recent call last):
     ...
-    error: [Errno 111] Connection refused
+    error: [Errno ...] Connection refused
 
 Before setUp() is called the ``server`` property is None::
 
