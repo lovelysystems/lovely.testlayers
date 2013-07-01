@@ -34,14 +34,14 @@ If the command startup fails an error gets raised.
     ...
     SystemError: Failed to start server rc=1 cmd=false
 
-LoggingServer Layer
--------------------
+Logging
+-------
 
-The logging server layer log stdout and stderr to a given log file::
+It's possible to specify a logfile for stdout and stderr::
 
     >>> import os
     >>> logPath = project_path('var', 'log', 'stdout.log')
-    >>> sl = server.LoggingServerLayer('sl2', servers=['localhost:33333'],
+    >>> sl = server.ServerLayer('sl2', servers=['localhost:33333'],
     ...                                start_cmd='nc -k -l 33333',
     ...                                stdout=logPath)
 
@@ -79,11 +79,11 @@ After calling setUp again, the file gets repoened::
     Hi
     >>> sl.tearDown()
 
-It's also possible to initialize a LoggingServerLayer with a file object::
+It's also possible to initialize a ServerLayer with a file object::
 
     >>> path = project_path('var', 'log', 'stdout_2.log')
     >>> f = open(path, 'w+')
-    >>> sl = server.LoggingServerLayer('sl2', servers=['localhost:33333'],
+    >>> sl = server.ServerLayer('sl2', servers=['localhost:33333'],
     ...                                start_cmd='nc -k -l 33333',
     ...                                stdout=f)
     >>> sl.setUp()
@@ -114,7 +114,7 @@ The file gets reopened after setUp::
 If a directory gets specified, a logfile within the directory gets created::
 
     >>> path = project_path('var', 'log')
-    >>> sl = server.LoggingServerLayer('myLayer', servers=['localhost:33333'],
+    >>> sl = server.ServerLayer('myLayer', servers=['localhost:33333'],
     ...                                start_cmd='nc -k -l 33333',
     ...                                stdout=path,
     ...                                stderr=path)

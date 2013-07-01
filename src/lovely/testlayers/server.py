@@ -34,7 +34,8 @@ class ServerLayer(object):
 
     __bases__ = ()
 
-    def __init__(self, name, servers=[], start_cmd=None, subprocess_args={}):
+    def __init__(self, name, servers=[], start_cmd=None, subprocess_args={},
+                 stdout=None, stderr=None):
         self.__name__ = name
         self.servers = []
         self.start_cmd = start_cmd
@@ -42,6 +43,12 @@ class ServerLayer(object):
         for server in servers:
             host, port = server.split(':')
             self.servers.append((host, int(port)))
+        self.stdout = None
+        self.stderr = None
+        if stdout:
+            self.stdout = self.getFileObject(stdout)
+        if stderr:
+            self.stderr = self.getFileObject(stderr, 'stderr')
 
     def start(self):
         assert self.start_cmd, 'No start command defined'
@@ -72,8 +79,16 @@ class ServerLayer(object):
     def stop(self):
         self.process.kill()
         self.process.wait()
+        if self.stdout and not self.stdout.closed:
+            self.stdout.close()
+        if self.stderr and not self.stderr.closed:
+            self.stderr.close()
 
     def setUp(self):
+        if self.stdout:
+            self.stdout = self._reopen(self.stdout)
+        if self.stderr:
+            self.stderr = self._reopen(self.stderr, 'stderr')
         self.start()
 
     def tearDown(self):
@@ -88,34 +103,6 @@ class ServerLayer(object):
                 time.sleep(0.05)
             else:
                 logging.info('Server stopped %s:%s', *server)
-
-
-class LoggingServerLayer(ServerLayer):
-    """ a Server Layer which which redirects stdout and stderr to a log file.
-    """
-
-    def __init__(self, name, servers=[], start_cmd=None, subprocess_args={}, stdout=None, stderr=None):
-        super(LoggingServerLayer, self).__init__(name, servers, start_cmd, subprocess_args)
-        self.stdout = None
-        self.stderr = None
-        if stdout:
-            self.stdout = self.getFileObject(stdout)
-        if stderr:
-            self.stderr = self.getFileObject(stderr, 'stderr')
-
-    def setUp(self):
-        if self.stdout:
-            self.stdout = self._reopen(self.stdout)
-        if self.stderr:
-            self.stderr = self._reopen(self.stderr, 'stderr')
-        super(LoggingServerLayer, self).setUp()
-
-    def stop(self):
-        super(LoggingServerLayer, self).stop()
-        if self.stdout and not self.stdout.closed:
-            self.stdout.close()
-        if self.stderr and not self.stderr.closed:
-            self.stderr.close()
 
     def getFileObject(self, path, ident='stdout'):
         """ checks if the object is a file path or already a file object
