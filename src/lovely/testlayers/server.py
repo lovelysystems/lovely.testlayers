@@ -114,7 +114,7 @@ class ServerLayer(object):
             return path
         elif isinstance(path, str):
             if os.path.isdir(path):
-                path = os.path.join(path, '%s_%s' % (self.__name__, ident))
+                path = os.path.join(path, '%s_%s.log' % (self.__name__, ident))
             return open(path, 'w+')
         return None
 

@@ -2,6 +2,11 @@
 Change History
 ==============
 
+2013/07/01 0.5.2
+================
+
+ - ServerLayer: generate logfiles with correct file extension
+
 2013/07/01 0.5.1
 ================
 

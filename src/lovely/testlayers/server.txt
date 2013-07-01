@@ -120,9 +120,9 @@ If a directory gets specified, a logfile within the directory gets created::
     ...                                stderr=path)
     >>> sl.setUp()
     >>> sl.stdout.name
-    '...var/log/myLayer_stdout'
+    '...var/log/myLayer_stdout.log'
 
     >>> sl.stderr.name
-    '...var/log/myLayer_stderr'
+    '...var/log/myLayer_stderr.log'
 
     >>> sl.tearDown()
