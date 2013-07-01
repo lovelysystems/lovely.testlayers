@@ -53,6 +53,7 @@ def test_suite():
         create_suite('layer.txt', setUp=cleanWorkDirs),
         create_suite('memcached.txt'),
         create_suite('server.txt'),
+        create_suite('mail.txt'),
         # the cassandra test needs an internet connection for downloading cassandra
         create_suite('cass.txt', level=3),
         create_suite('pgsql.txt'),
@@ -60,6 +61,21 @@ def test_suite():
         create_suite('mysql.txt', setUp=cleanWorkDirs, level=2),
         create_suite('nginx.txt')
         )
+    return unittest.TestSuite(suites)
+
+def mongodb_suite():
+    """
+    A test suite for running MongoDB tests, boot it by issuing::
+
+        bin/test-mongodb --suite-name=mongodb_suite
+    """
+    suites = (
+        # the mongodb test needs an installed mongodb
+        # e.g. ``bin/buildout install mongodb``
+        create_suite('mongodb_single.txt'),
+        create_suite('mongodb_masterslave.txt'),
+        create_suite('mongodb_replicaset.txt'),
+    )
     return unittest.TestSuite(suites)
 
 if __name__ == '__main__':

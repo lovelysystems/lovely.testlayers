@@ -18,3 +18,14 @@ default. To run all tests use::
  ./bin/test --all
 
 
+MongoDB
+-------
+
+The mongodb tests are separated and by default not included if buildout is run.
+To install mongodb execute::
+
+    bin/buildout install mongodb mongodb-test
+
+And then run the tests with::
+
+    bin/test-mongodb --suite-name=mongodb_suite

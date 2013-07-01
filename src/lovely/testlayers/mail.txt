@@ -1,0 +1,105 @@
+=====================
+Email/SMTP Test Layer
+=====================
+
+This layer starts and stops a smtp daemon on given port (default 1025)::
+
+    >>> from lovely.testlayers import mail
+    >>> layer = mail.SMTPServerLayer(port=1025)
+
+To setup the layer call ``setUp()``::
+
+    >>> layer.setUp()
+
+Now the Server can receive emails::
+
+    >>> from email.mime.text import MIMEText
+    >>> from email.utils import formatdate
+    >>> from smtplib import SMTP
+    >>> msg = MIMEText('testmessage', _charset='utf-8')
+    >>> msg['Subject'] = 'first email'
+    >>> msg['From'] = 'from@example.org'
+    >>> msg['To'] = 'recipient@example.org'
+    >>> msg['Date'] = formatdate(localtime=True)
+
+    >>> s = SMTP()
+    >>> _ = s.connect('localhost:1025')
+    >>> _ = s.sendmail('from@example.org', 'recipient@example.com', msg.as_string())
+    >>> msg['Subject'] = 'second email'
+    >>> _ = s.sendmail('from@example.org', 'recipient@example.com', msg.as_string())
+
+    >>> s.quit()
+    (221, 'Bye')
+
+The testlayer exposes a ``server`` property which can be used to access the
+received emails.
+
+Use the ``mbox(recipient)`` method to get the correct Mailbox::
+
+    >>> mailbox = layer.server.mbox('recipient@example.com')
+
+Use ``is_empty()`` to verify that the mailbox isn't empty::
+
+    >>> mailbox.is_empty()
+    False
+
+If the recipient didn't receive an email, an empty Mailbox is returned::
+
+    >>> emptybox = layer.server.mbox('invalid@example.com')
+    >>> emptybox.is_empty()
+    True
+
+And ``popleft()`` to get the email that was received at first::
+
+    >>> print(mailbox.popleft())
+    Content-Type: text/plain; charset="utf-8"
+    MIME-Version: 1.0
+    Content-Transfer-Encoding: base64
+    Subject: first email
+    From: from@example.org
+    To: recipient@example.org
+    ...
+    <BLANKLINE>
+    ...
+
+The layer can be shutdown using the tearDown method::
+
+    >>> layer.tearDown()
+
+After tearDown() the server can't receive any more emails::
+
+    >>> s = SMTP()
+    >>> _ = s.connect('localhost:1025')
+    Traceback (most recent call last):
+    ...
+    error: [Errno ...] Connection refused
+
+Verification that setUp() and tearDown() work for subsequent calls::
+
+    >>> layer.setUp()
+
+    >>> _ = s.connect('localhost:1025')
+    >>> _ = s.sendmail('from@example.org', 'recipient@example.com', msg.as_string())
+    >>> print(mailbox.popleft())
+    Content-Type: text/plain; charset="utf-8"
+    MIME-Version: 1.0
+    Content-Transfer-Encoding: base64
+    Subject: first email
+    From: from@example.org
+    To: recipient@example.org
+    ...
+    <BLANKLINE>
+    ...
+
+    >>> _ = s.quit()
+    >>> layer.tearDown()
+    >>> _ = s.connect('localhost:1025')
+    Traceback (most recent call last):
+    ...
+    error: [Errno ...] Connection refused
+
+Before setUp() is called the ``server`` property is None::
+
+    >>> layer = mail.SMTPServerLayer(port=1025)
+    >>> layer.server is None
+    True

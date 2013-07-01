@@ -1,0 +1,98 @@
+========================================
+MongoDB test layer » single server setup
+========================================
+
+.. note::
+    To run this test::
+
+        bin/buildout install mongodb mongodb-test
+        bin/test-mongodb --test=mongodb_single
+
+
+Introduction
+============
+
+| For information about MongoDB see:
+| http://en.wikipedia.org/wiki/Mongodb
+
+The ``MongoLayer`` starts and stops a single MongoDB instance.
+
+
+
+Single server
+=============
+
+Warming up
+----------
+We create a new MongoDB layer::
+
+    >>> from lovely.testlayers import mongodb
+    >>> mongo = mongodb.MongoLayer('mongodb.single', mongod_bin = project_path('bin', 'mongod'))
+    >>> mongo.storage_port
+    37017
+
+So let's bootstrap the server::
+
+    >>> mongo.setUp()
+
+
+Pre flight checks
+-----------------
+Now the MongoDB server is up and running. We test this by connecting
+to the storage port via telnet::
+
+    >>> import telnetlib
+    >>> tn = telnetlib.Telnet('localhost', mongo.storage_port)
+    >>> tn.close()
+
+
+Getting real
+------------
+
+Connect to it using a real MongoDB client::
+
+    >>> from pymongo import Connection
+    >>> mongo_conn = Connection('localhost:37017', safe=True)
+    >>> mongo_db = mongo_conn['foo-db']
+
+Insert some data::
+
+    >>> document_id = mongo_db.foobar.insert({'hello': 'world'})
+    >>> document_id
+    ObjectId('...')
+
+And query it::
+
+    >>> document = mongo_db.foobar.find_one(document_id)
+    >>> document
+    {u'_id': ObjectId('...'), u'hello': u'world'}
+
+Another query::
+
+    >>> mongo_db.foobar.find({'hello': 'world'})[0] == document
+    True
+
+
+Clean up
+--------
+
+Database
+________
+
+    >>> mongo_conn.drop_database('foo-db')
+    >>> mongo_conn.disconnect()
+    >>> del mongo_conn
+    >>> del mongo_db
+
+
+Layers
+______
+
+The connection is refused after teardown::
+
+    >>> mongo.tearDown()
+
+    >>> telnetlib.Telnet('localhost', mongo.storage_port)
+    Traceback (most recent call last):
+    ...
+    error:...Connection refused

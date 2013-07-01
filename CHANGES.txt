@@ -2,6 +2,8 @@
 Change History
 ==============
 
+Unreleased
+==========
 
 Unreleased
 ==========
@@ -9,6 +11,35 @@ Unreleased
  - use openresty instead of nginx
 
  - nailed versions of dependencies
+
+2013/06/19 0.5.0
+================
+
+ - Add MongoLayer
+
+2013/04/03 0.4.3
+================
+
+ - SMTPServerLayer's is now None before calling setUp()
+
+ - add additional tests for SMTPServerLayer
+
+2013/04/03 0.4.2
+================
+
+ - add missing __name__ to SMTPServerLayer
+
+2013/04/03 0.4.1
+================
+
+ - add missing __bases__ to SMTPServerLayer
+
+2013/04/03 0.4.0
+================
+
+ - added SMTPServerLayer
+
+ - updated bootstrap.py and nginx/psql download location
 
 2012/11/23 0.3.5
 ================

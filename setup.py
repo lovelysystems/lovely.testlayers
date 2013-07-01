@@ -28,15 +28,19 @@ long_description='\n'.join((
         read('src', 'lovely', 'testlayers', 'server.txt'),
         read('src', 'lovely', 'testlayers', 'memcached.txt'),
         read('src', 'lovely', 'testlayers', 'nginx.txt'),
+        read('src', 'lovely', 'testlayers', 'mail.txt'),
         read('src', 'lovely', 'testlayers', 'cass.txt'),
         read('src', 'lovely', 'testlayers', 'mysql.txt'),
         read('src', 'lovely', 'testlayers', 'pgsql.txt'),
+        read('src', 'lovely', 'testlayers', 'mongodb_single.txt'),
+        read('src', 'lovely', 'testlayers', 'mongodb_masterslave.txt'),
+        read('src', 'lovely', 'testlayers', 'mongodb_replicaset.txt'),
         read('CHANGES.txt'),
         ))
 
 setup(
     name = 'lovely.testlayers',
-    version = '0.3.5',
+    version = '0.5.0',
     description="mysql, postgres nginx, memcached cassandra test"+\
                 " layers for use with zope.testrunner",
     long_description=long_description,
@@ -54,6 +58,7 @@ setup(
         mysql=['MySQL-python'],
         cassandra=['zc.buildout>=1.4'],
         pgsql=['psycopg2',
-               'transaction']),
+               'transaction'],
+        mongodb=['pymongo==2.5.2']),
     install_requires = ['setuptools']
     )
