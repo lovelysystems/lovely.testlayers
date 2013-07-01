@@ -2,11 +2,8 @@
 Change History
 ==============
 
-Unreleased
-==========
-
-Unreleased
-==========
+2013/07/01 0.5.1
+================
 
  - It's possible to specify logging of the ServerLayer
 
