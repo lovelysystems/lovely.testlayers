@@ -42,7 +42,7 @@ defined by the buildout.
 
     >>> nginx_cmd = os.path.join(os.path.dirname(os.path.dirname(
     ...     os.path.dirname(os.path.dirname(os.path.abspath(__file__))))),
-    ...                          'parts', 'nginx', 'sbin', 'nginx')
+    ...                          'parts', 'openresty', 'nginx', 'sbin', 'nginx')
 
 
 Now we can instantiate the layer.
@@ -113,10 +113,10 @@ Or if we try to start the server twice.
     >>> nl.setUp()
     Traceback (most recent call last):
     ...
-    RuntimeError: Nginx start failed [emerg]:
-     bind() to 127.0.0.1:12345 failed (48: Address already in use)
+    RuntimeError: Nginx start failed nginx: [emerg] bind() ...
+    nginx: [emerg] bind() to 127.0.0.1:12345 failed (48: Address already in use)
     ...
-    [emerg]: still could not bind()
+    nginx: [emerg] still could not bind()
 
     >>> nl.tearDown()
 
@@ -147,8 +147,8 @@ directory as the prefix, which actually does not contain any configs.
 
     >>> nginx.NginxLayer('nl', '.', nginx_cmd)
     Traceback (most recent call last):
-    RuntimeError: Nginx check failed nginx version: nginx/...
-    [alert]: could not open error log file...
+    RuntimeError: Nginx check failed nginx version: ngx_openresty/...
+    nginx: [alert] could not open error log file...
     ... [emerg] ...
-    configuration file .../conf/nginx.conf test failed
+    nginx: configuration file .../conf/nginx.conf test failed
 

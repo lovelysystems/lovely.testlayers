@@ -5,9 +5,13 @@ memcached test layer
 This layer starts and stops a memcached daemon on given port (default
 is 11222)
 
-    >>> from lovely.testlayers import memcached
 
-    >>> ml = memcached.MemcachedLayer('ml')
+    >>> import os
+    >>> here = os.path.dirname(__file__)
+    >>> project_root = os.path.dirname(os.path.dirname(os.path.dirname(here)))
+    >>> path = os.path.join(project_root, 'parts', 'memcached', 'bin', 'memcached')
+    >>> from lovely.testlayers import memcached
+    >>> ml = memcached.MemcachedLayer('ml', path=path)
 
 So let us setup the server.
 

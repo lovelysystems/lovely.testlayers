@@ -3,6 +3,13 @@ Change History
 ==============
 
 
+Unreleased
+==========
+
+ - use openresty instead of nginx
+
+ - nailed versions of dependencies
+
 2012/11/23 0.3.5
 ================
 
