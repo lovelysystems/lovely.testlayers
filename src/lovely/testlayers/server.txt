@@ -59,8 +59,8 @@ Send a message to the server::
 
 The message gets logged to stdout::
 
-    >>> sl.stdout.seek(pos)
-    >>> print sl.stdout.read()
+    >>> _ = sl.stdout.seek(pos)
+    >>> print(sl.stdout.read())
     GET / HTTP/1.0
 
 After teardown the file gets closed::
@@ -74,8 +74,8 @@ After calling setUp again, the file gets repoened::
     >>> sl.setUp()
     >>> pos = sl.stdout.tell()
     >>> _ = run('echo "Hi" | nc localhost 33333')
-    >>> sl.stdout.seek(pos)
-    >>> print sl.stdout.read()
+    >>> _ = sl.stdout.seek(pos)
+    >>> print(sl.stdout.read())
     Hi
     >>> sl.tearDown()
 
@@ -90,8 +90,8 @@ It's also possible to initialize a ServerLayer with a file object::
 
     >>> pos = sl.stdout.tell()
     >>> _ = run('echo "Test" | nc localhost 33333')
-    >>> sl.stdout.seek(pos)
-    >>> print sl.stdout.read()
+    >>> _ = sl.stdout.seek(pos)
+    >>> print(sl.stdout.read())
     Test
 
     >>> sl.tearDown()
@@ -106,8 +106,8 @@ The file gets reopened after setUp::
     >>> sl.setUp()
     >>> pos = sl.stdout.tell()
     >>> _ = run('echo "File gets reopened" | nc localhost 33333')
-    >>> sl.stdout.seek(pos)
-    >>> print sl.stdout.read()
+    >>> _ = sl.stdout.seek(pos)
+    >>> print(sl.stdout.read())
     File gets reopened
     >>> sl.tearDown()
 

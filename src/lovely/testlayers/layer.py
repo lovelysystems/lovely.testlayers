@@ -87,7 +87,7 @@ class WorkDirectoryLayer(object):
         assert ident
         exists, tf = self.snapshotInfo(ident)
         if not exists:
-            raise ValueError, "Snapshot %r not found" % ident
+            raise ValueError("Snapshot %r not found" % ident)
         self.removeWD()
         system('cd "%s" && tar -zxf "%s"' % (self._bd, tf))
 

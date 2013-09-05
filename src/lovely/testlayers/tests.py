@@ -18,7 +18,7 @@
 
 import unittest
 import doctest
-from layer import cleanAll
+from lovely.testlayers.layer import cleanAll
 import subprocess
 import os
 
@@ -26,9 +26,13 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 
 def project_path(*path):
-    return os.path.join(
-        os.path.dirname(os.path.dirname(os.path.dirname(here))),
-        *path)
+    p = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(here))), *path)
+    # makedirs is only executed here because if the tests are run using tox the
+    # var/log directory won't exist on the first run.
+    if not os.path.exists(os.path.dirname(p)):
+        os.makedirs(os.path.dirname(p))
+    return p
 
 
 def run(cmd, *args):

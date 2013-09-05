@@ -22,9 +22,14 @@ import subprocess
 import time
 from collections import deque
 import shlex
-import util
-import types
 import os
+import sys
+
+from lovely.testlayers import util
+
+
+if sys.version_info[0] > 2:
+    basestring = str
 
 
 class ServerLayer(object):
@@ -58,7 +63,7 @@ class ServerLayer(object):
             self.stdout = self._reopen(self.stdout)
         if self.stderr:
             self.stderr = self._reopen(self.stderr, 'stderr')
-        if type(self.start_cmd) in types.StringTypes:
+        if isinstance(self.start_cmd, basestring):
             cmd = shlex.split(self.start_cmd)
         else:
             cmd = self.start_cmd
@@ -112,12 +117,12 @@ class ServerLayer(object):
             returned.
             If the path is a directory, also a file object gets created at the
             given path """
-        if isinstance(path, file):
-            return path
-        elif isinstance(path, str):
+        if isinstance(path, basestring):
             if os.path.isdir(path):
                 path = os.path.join(path, '%s_%s.log' % (self.__name__, ident))
             return open(path, 'w+')
+        elif hasattr(path, 'closed') and hasattr(path, 'close'):
+            return path
         return None
 
     def _reopen(self, f, ident='stdout'):
