@@ -18,6 +18,17 @@ default. To run all tests use::
  ./bin/test --all
 
 
+To test against multiple python versions tox can be used. The python
+interpreter need to be available in the `$PATH` variable as `python2.7`,
+`python3.3` and `pypy`. Execute tox using::
+
+ ./bin/tox
+
+To limit the tox test to a single python interpreter use it like this::
+
+ ./bin/tox -e py27
+
+
 MongoDB
 -------
 

@@ -9,3 +9,4 @@ develop-eggs/
 /parts/
 /dist/
 /downloads/
+.tox/
