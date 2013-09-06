@@ -40,7 +40,7 @@ long_description='\n'.join((
 
 setup(
     name = 'lovely.testlayers',
-    version = '0.5.3',
+    version = '0.6.0',
     description="mysql, postgres nginx, memcached cassandra test"+\
                 " layers for use with zope.testrunner",
     long_description=long_description,
