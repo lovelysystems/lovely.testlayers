@@ -1,5 +1,5 @@
 ======================================
-MongoDB test layer » replica set setup
+MongoDB test layer - replica set setup
 ======================================
 
 .. note::

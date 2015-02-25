@@ -1,5 +1,5 @@
 ========================================
-MongoDB test layer » single server setup
+MongoDB test layer - single server setup
 ========================================
 
 .. note::
