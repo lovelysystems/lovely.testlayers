@@ -18,6 +18,7 @@
 
 import os
 import subprocess
+import signal
 
 class NginxLayer(object):
 
@@ -51,6 +52,7 @@ class NginxLayer(object):
         return process.stderr.read().split(':', 1)[1]
 
     def setUp(self):
+        signal.signal(signal.SIGINT, self.tearDown)
         cmd = self._nginx_cmd()
         process = subprocess.Popen(cmd,
                                    shell=True,
@@ -59,7 +61,7 @@ class NginxLayer(object):
             raise RuntimeError(
                 'Nginx start failed %s' % process.stderr.read())
 
-    def tearDown(self):
+    def tearDown(self, *args):
         cmd = self._nginx_cmd('-s', 'stop')
         process = subprocess.Popen(cmd,
                                    shell=True,

@@ -5,6 +5,8 @@ Change History
 Unreleased
 ==========
 
+ - added SIGINT handling to nginx layer (KeyboardInterrupt)
+
 2013/09/06 0.6.0
 ================
 
