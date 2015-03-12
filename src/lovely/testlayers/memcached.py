@@ -25,7 +25,7 @@ class MemcachedLayer(ServerLayer):
 
     __bases__ = ()
 
-    def __init__(self, name, port=11222, connections=10, path=None,
+    def __init__(self, name, port=11222, connections=32, path=None,
                  subprocess_args={}, stdout=None, stderr=None):
         self.port = port
         if not path:
