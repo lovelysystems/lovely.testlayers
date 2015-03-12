@@ -1,5 +1,5 @@
 =======================================
-MongoDB test layer » master/slave setup
+MongoDB test layer - master/slave setup
 =======================================
 
 .. note::
