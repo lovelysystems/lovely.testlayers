@@ -51,8 +51,13 @@ class NginxLayer(object):
                 'Nginx check failed %s' % process.stderr.read())
         return process.stderr.read().split(':', 1)[1]
 
+    def _silenty_stop(self, signum, frame):
+        FNULL = open(os.devnull, 'w')
+        cmd = self._nginx_cmd('-s', 'stop')
+        process = subprocess.Popen(cmd, shell=True, stderr=FNULL, stdout=FNULL)
+
     def setUp(self):
-        signal.signal(signal.SIGINT, self.tearDown)
+        signal.signal(signal.SIGINT, self._silenty_stop)
         cmd = self._nginx_cmd()
         process = subprocess.Popen(cmd,
                                    shell=True,

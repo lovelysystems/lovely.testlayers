@@ -5,6 +5,10 @@ Change History
 Unreleased
 ==========
 
+ - fix: on SIGINT try to stop nginx silently
+
+ - use only ascii characters in mongodb_* documents
+
 2015/03/12 0.6.1
 ================
 
