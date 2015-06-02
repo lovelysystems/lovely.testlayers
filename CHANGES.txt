@@ -5,6 +5,11 @@ Change History
 Unreleased
 ==========
 
+2015/06/02 0.6.3
+================
+
+ - call isUp with host localhost on setUp method of basesql layer
+
 2015/03/13 0.6.2
 ================
 
