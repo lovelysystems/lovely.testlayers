@@ -171,7 +171,7 @@ class BaseSQLLayer(ServerGetterMixin):
         return os.path.isfile(sp), sp
 
     def setUp(self):
-        if util.isUp('', self.port):
+        if util.isUp('localhost', self.port):
             raise RuntimeError, "Port already listening: %r" % self.port
         if not os.path.exists(self.dbDir):
             self.srv.initDB()
