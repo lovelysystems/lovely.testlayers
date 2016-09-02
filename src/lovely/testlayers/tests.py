@@ -98,5 +98,32 @@ def mongodb_suite():
     )
     return unittest.TestSuite(suites)
 
+
+def openldap_suite():
+    """
+    A test suite for running OpenLDAP tests, boot it by issuing::
+
+        bin/buildout install openldap-test
+        bin/test-openldap --suite-name=openldap_suite
+    """
+    suites = (
+        create_suite('openldap.txt'),
+        )
+    return unittest.TestSuite(suites)
+
+
+def apacheds_suite():
+    """
+    A test suite for running ApacheDS tests, boot it by issuing::
+
+        bin/buildout install apacheds-test
+        bin/test-apacheds --suite-name=apacheds_suite
+    """
+    suites = (
+        create_suite('apacheds.txt'),
+        )
+    return unittest.TestSuite(suites)
+
+
 if __name__ == '__main__':
     unittest.main(defaultTest='test_suite')

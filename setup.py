@@ -35,12 +35,14 @@ long_description='\n'.join((
         read('src', 'lovely', 'testlayers', 'mongodb_single.txt'),
         read('src', 'lovely', 'testlayers', 'mongodb_masterslave.txt'),
         read('src', 'lovely', 'testlayers', 'mongodb_replicaset.txt'),
+        read('src', 'lovely', 'testlayers', 'apacheds.txt'),
+        read('src', 'lovely', 'testlayers', 'openldap.txt'),
         read('CHANGES.txt'),
         ))
 
 setup(
     name = 'lovely.testlayers',
-    version = '0.6.3',
+    version = '0.7.0.dev2',
     description="mysql, postgres nginx, memcached cassandra test"+\
                 " layers for use with zope.testrunner",
     long_description=long_description,
@@ -48,7 +50,7 @@ setup(
     author = "Lovely Systems",
     author_email = 'office@lovelysystems.com',
     package_dir = {'':'src'},
-    keywords = "testing zope layer test cassandra memcached",
+    keywords = "testing zope layer test apacheds cassandra memcached mongodb mysql nginx openldap postgresql",
     license = "Apache License 2.0",
     zip_safe = False,
     url = 'https://github.com/lovelysystems/lovely.testlayers',
@@ -59,6 +61,8 @@ setup(
         cassandra=['zc.buildout>=1.4'],
         pgsql=['psycopg2',
                'transaction'],
-        mongodb=['pymongo==2.5.2']),
+        mongodb=['pymongo==2.5.2'],
+        ldap=['python-ldap==2.4.27'],
+    ),
     install_requires = ['setuptools']
     )

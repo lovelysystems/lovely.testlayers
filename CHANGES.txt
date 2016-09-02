@@ -5,6 +5,7 @@ Change History
 Unreleased
 ==========
 - Refactor generic functionality from MongoLayer into WorkspaceLayer
+- Add server layers for OpenLDAP and ApacheDS LDAP servers
 
 
 2015/06/02 0.6.3
