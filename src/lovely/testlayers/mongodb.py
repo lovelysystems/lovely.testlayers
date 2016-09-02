@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright 2011,2013 Andreas Motl
+# Copyright 2011-2016 Andreas Motl
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,37 +29,25 @@ Various flavors of test layers for MongoDB:
 - The ``MongoShardingLayer`` starts and stops multiple MongoDB instances as
   well as a ``mongos`` instance and configures sharding between them. [TODO]
 """
-
 import os
 import time
-import shutil
 import logging
-from layer import WorkDirectoryLayer, CascadedLayer
-from server import ServerLayer
+from lovely.testlayers.util import asbool, DuplicateSuppressingLogFilter
+from lovely.testlayers.layer import WorkspaceLayer, CascadedLayer
+from lovely.testlayers.server import ServerLayer
 
 
-# setup logging
-class NonDuplicateLogFilter(logging.Filter):
-
-    def __init__(self):
-        self.last_message = None
-
-    def filter(self, record):
-        outcome = self.last_message != record.msg
-        self.last_message = record.msg
-        return outcome
-
-
+# Setup logging
 console = logging.StreamHandler()
 console.setFormatter(
     logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s'))
 logger = logging.getLogger(__name__)
 logger.addHandler(console)
-logger.addFilter(NonDuplicateLogFilter())
+logger.addFilter(DuplicateSuppressingLogFilter())
 logger.setLevel(logging.INFO)
 
 
-class MongoLayer(WorkDirectoryLayer, ServerLayer):
+class MongoLayer(WorkspaceLayer, ServerLayer):
     """
     Encapsulates controlling a single MongoDB instance.
     """
@@ -96,41 +84,38 @@ class MongoLayer(WorkDirectoryLayer, ServerLayer):
             Additional command line options to be passed to ``mongod``,
             defaults to empty dictionary
         """
+
+        # Essential attributes
         self.__name__ = name
+        self.__classname__ = self.__class__.__name__
+
+        # Setup workspace
+        self.directories = ('var', 'run', 'log')
+        self.cleanup = asbool(cleanup) or False
+        self.workspace_setup()
+
+        # Propagate/compute parameters
         self.mongod_bin = mongod_bin
         self.hostname = hostname
         self.storage_port = storage_port
         self.console_port = storage_port + 1000
-        self.directories = ('var', 'run', 'log')
-        self.cleanup = cleanup
         self.extra_options = extra_options or {}
 
-        self.setup_workdirectory()
-        logger.info('Initializing MongoLayer on port=%s, workingdir=%s' %
-            (self.storage_port, self.workingdir))
-        self.setup_server()
+        logger.info(u'Initializing server layer {__name__} ({__classname__}) on port={storage_port}, workingdir={workingdir}'.format(**self.__dict__))
 
-    def setup_workdirectory(self):
-        self.wdNameSpecific = False
-        self.setUpWD()
-        self.workingdir = self.wdPath(self.__name__)
-        # TODO:
-        # maybe differentiate between cleaning up the working directory
-        # on startup versus cleaning it up on teardown
-        self._workspace_cleanup()
-        self._workspace_create()
+        self.setup_server()
 
     def setup_server(self):
         ServerLayer.__init__(self, self.__name__)
-        self.log_file = os.path.join(self.log, 'mongodb.log')
-        self.pid_file = os.path.join(self.run, 'mongodb.pid')
-        self.lock_file = os.path.join(self.var, 'mongod.lock')
+        self.log_file = os.path.join(self.log_path, 'mongodb.log')
+        self.pid_file = os.path.join(self.run_path, 'mongodb.pid')
+        self.lock_file = os.path.join(self.var_path, 'mongod.lock')
         self.mongod_bin = self.mongod_bin or 'mongod'
 
         # compute mongod arguments
         self.default_options = {
             'port': self.storage_port,
-            'dbpath': self.var,
+            'dbpath': self.var_path,
             'pidfilepath': self.pid_file,
             'logpath': self.log_file,
             'rest': True,
@@ -163,31 +148,8 @@ class MongoLayer(WorkDirectoryLayer, ServerLayer):
         ServerLayer.start(self)
 
     def stop_acme(self):
-        """
-        TODO: maybe use "admin.command('shutdown')"
-        instead of just killing the server process?
-        """
+        # TODO: Maybe use "admin.command('shutdown')" instead of just killing the server process?
         pass
-
-    def _workspace_cleanup(self, force=False):
-        """
-        Removes the MongoDB "home" aka. workspace directory.
-        """
-        if self.cleanup or force:
-            logger.info('Removing workspace directory "%s"' % self.workingdir)
-            os.path.exists(self.workingdir) and shutil.rmtree(self.workingdir)
-
-    def _workspace_create(self):
-        """
-        Creates the MongoDB "home" aka. workspace directory
-        and desired subdirectories.
-        """
-        os.path.exists(self.workingdir) or os.mkdir(self.workingdir)
-        for subdir_name in self.directories:
-            subdir = self.wdPath(self.__name__, subdir_name)
-            if not os.path.exists(subdir):
-                os.mkdir(subdir)
-            setattr(self, subdir_name, subdir)
 
     def _serialize_arguments(self, arguments):
         """
@@ -213,7 +175,7 @@ class MongoLayer(WorkDirectoryLayer, ServerLayer):
         # TODO:
         # maybe differentiate between cleaning up the working directory
         # on startup versus cleaning it up on teardown
-        self._workspace_cleanup()
+        self.workspace_cleanup()
 
 
 class MongoMultiNodeLayer(CascadedLayer):
