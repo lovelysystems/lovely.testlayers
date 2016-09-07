@@ -1,0 +1,131 @@
+===================
+OpenLDAP test layer
+===================
+
+.. note::
+
+    To run this test::
+
+        bin/buildout install openldap-test
+        bin/test-openldap --test=openldap
+
+
+Introduction
+============
+
+| For information about OpenLDAP see:
+| http://www.openldap.org/
+
+The ``OpenLDAPLayer`` starts and stops a single OpenLDAP instance.
+
+
+Setup
+=====
+Debian Linux::
+
+    aptitude install slapd
+
+CentOS Linux::
+
+    yum install openldap-servers
+
+Mac OS X, Macports::
+
+    sudo port install openldap
+
+
+
+Single server
+=============
+
+Warming up
+----------
+We create a new OpenLDAP layer::
+
+    >>> from lovely.testlayers import openldap
+
+    # Initialize layer object
+    >>> server = openldap.OpenLDAPLayer('openldap', port=3389)
+
+    # Add essential schemas
+    >>> server.add_schema('core.schema')
+    >>> server.add_schema('cosine.schema')
+    >>> server.add_schema('inetorgperson.schema')
+
+    >>> server.port
+    3389
+
+So let's bootstrap the server::
+
+    >>> server.setUp()
+
+
+Pre flight checks
+-----------------
+Now the OpenLDAP server is up and running. We test this by connecting
+to the storage port via telnet::
+
+    >>> import telnetlib
+    >>> tn = telnetlib.Telnet('localhost', server.port)
+    >>> tn.close()
+
+
+Getting real
+------------
+
+Connect to it using a real OpenLDAP client::
+
+    >>> import ldap
+    >>> client = ldap.initialize('ldap://localhost:3389')
+    >>> client.simple_bind_s('cn=admin,dc=test,dc=example,dc=com', 'secret')
+    (97, [], 1, [])
+
+An empty DIT is - empty::
+
+    >>> client.search_s('dc=test,dc=example,dc=com', ldap.SCOPE_SUBTREE, '(cn=Hotzenplotz*)', ['cn','mail'])
+    Traceback (most recent call last):
+    ...
+    NO_SUCH_OBJECT: {'desc': 'No such object'}
+
+Insert some data::
+
+    Create DIT context for suffix
+    >>> record = [('objectclass', ['dcObject', 'organization']), ('o', 'Test Organization'), ('dc', 'test')]
+    >>> client.add_s('dc=test,dc=example,dc=com', record)
+    (105, [])
+
+    Create container for users
+    >>> record = [('objectclass', ['top', 'organizationalUnit']), ('ou', 'users')]
+    >>> client.add_s('ou=users,dc=test,dc=example,dc=com', record)
+    (105, [])
+
+    Create single user
+    >>> record = [
+    ...     ('objectclass', ['top', 'person', 'organizationalPerson', 'inetOrgPerson']),
+    ...     ('cn', 'User 1'), ('sn', 'User 1'), ('uid', 'user1@test.example.com'),
+    ...     ('userPassword', '{SSHA}DnIz/2LWS6okrGYamkg3/R4smMu+h2gM')
+    ... ]
+    >>> client.add_s('cn=User 1,ou=users,dc=test,dc=example,dc=com', record)
+    (105, [])
+
+And query it::
+
+    >>> client.search_s('dc=test,dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=user1@test.example.com)', ['cn', 'uid'])
+    [('cn=User 1,ou=users,dc=test,dc=example,dc=com', {'cn': ['User 1'], 'uid': ['user1@test.example.com']})]
+
+
+
+Clean up
+--------
+
+Layers
+______
+
+The connection is refused after teardown::
+
+    >>> server.tearDown()
+
+    >>> telnetlib.Telnet('localhost', server.port)
+    Traceback (most recent call last):
+    ...
+    error:...Connection refused

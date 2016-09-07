@@ -1,0 +1,115 @@
+===================
+ApacheDS test layer
+===================
+
+.. note::
+
+    To run this test::
+
+        bin/buildout install apacheds-test
+        bin/test-apacheds --test=apacheds
+
+
+Introduction
+============
+
+| For information about ApacheDS see:
+| https://directory.apache.org/apacheds/
+
+The ``ApacheDSLayer`` starts and stops a single ApacheDS instance.
+
+
+Setup
+=====
+Go to https://directory.apache.org/apacheds/downloads.html
+
+
+Single server
+=============
+
+Warming up
+----------
+We create a new ApacheDS layer::
+
+    >>> from lovely.testlayers import apacheds
+
+    # Initialize layer object
+    >>> server = apacheds.ApacheDSLayer('apacheds', port=10389)
+
+    >>> server.port
+    10389
+
+So let's bootstrap the server::
+
+    >>> server.setUp()
+
+
+Pre flight checks
+-----------------
+Now the OpenLDAP server is up and running. We test this by connecting
+to the storage port via telnet::
+
+    >>> import telnetlib
+    >>> tn = telnetlib.Telnet('localhost', server.port)
+    >>> tn.close()
+
+
+Getting real
+------------
+
+Connect to it using a real OpenLDAP client::
+
+    >>> import ldap
+    >>> client = ldap.initialize('ldap://localhost:10389')
+    >>> client.simple_bind_s('uid=admin,ou=system', 'secret')
+    (97, [], 1, [])
+
+An empty DIT is - empty::
+
+    >>> client.search_s('dc=test,dc=example,dc=com', ldap.SCOPE_SUBTREE, '(cn=Hotzenplotz*)', ['cn','mail'])
+    Traceback (most recent call last):
+    ...
+    NO_SUCH_OBJECT: {'info': "NO_SUCH_OBJECT: failed for MessageType : SEARCH_REQUEST...
+
+Insert some data::
+
+    Create DIT context for suffix
+    >>> record = [('objectclass', ['dcObject', 'organization']), ('o', 'Test Organization'), ('dc', 'test')]
+    >>> client.add_s('dc=test,dc=example,dc=com', record)
+    (105, [])
+
+    Create container for users
+    >>> record = [('objectclass', ['top', 'organizationalUnit']), ('ou', 'users')]
+    >>> client.add_s('ou=users,dc=test,dc=example,dc=com', record)
+    (105, [])
+
+    Create single user
+    >>> record = [
+    ...     ('objectclass', ['top', 'person', 'organizationalPerson', 'inetOrgPerson']),
+    ...     ('cn', 'User 1'), ('sn', 'User 1'), ('uid', 'user1@test.example.com'),
+    ...     ('userPassword', '{SSHA}DnIz/2LWS6okrGYamkg3/R4smMu+h2gM')
+    ... ]
+    >>> client.add_s('cn=User 1,ou=users,dc=test,dc=example,dc=com', record)
+    (105, [])
+
+And query it::
+
+    >>> client.search_s('dc=test,dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=user1@test.example.com)', ['cn', 'uid'])
+    [('cn=User 1,ou=users,dc=test,dc=example,dc=com', {'uid': ['user1@test.example.com'], 'cn': ['User 1']})]
+
+
+
+Clean up
+--------
+
+Layers
+______
+
+The connection is refused after teardown::
+
+    >>> server.tearDown()
+
+    >>> telnetlib.Telnet('localhost', server.port)
+    Traceback (most recent call last):
+    ...
+    error:...Connection refused

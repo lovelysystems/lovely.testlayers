@@ -15,10 +15,10 @@
 # limitations under the License.
 #
 ##############################################################################
-
-import tempfile
 import os
+import glob
 import shutil
+import tempfile
 
 BASE = os.path.join(tempfile.gettempdir(), 'LovelyTestLayers')
 
@@ -90,6 +90,102 @@ class WorkDirectoryLayer(object):
             raise ValueError("Snapshot %r not found" % ident)
         self.removeWD()
         system('cd "%s" && tar -zxf "%s"' % (self._bd, tf))
+
+class WorkspaceLayer(WorkDirectoryLayer):
+    """
+    The WorkspaceLayer sits on top of the WorkDirectoryLayer
+    and provides additional convenience. To get an idea:
+
+    - Append self.__name__ introduced by ServerLayer to working directory to isolate
+      multiple working directories against each other in multi-daemon/cluster scenarios.
+
+    - Provide full path to working directory as instance attribute ``self.workingdir``.
+
+    - Create multiple subdirectories and also provide their full
+      paths as instance attributes, suffixed by ``_path``.
+      e.g. ``self.log_path``, ``self.etc_path``.
+
+    - Clean up working directory before and after test runs.
+      TODO: Improve configurability.
+
+    - Provide helper methods ``find_daemon`` and ``find_configuration`` to
+      compute paths to appropriate artifacts based on lists of candidates and $PATH.
+
+    """
+
+    subdir_suffix = u'_path'
+
+    def workspace_setup(self):
+        self.wdNameSpecific = False
+        self.setUpWD()
+        self.workingdir = self.wdPath(self.__name__)
+        # TODO: Differentiate between cleaning up the working directory on startup vs. teardown
+        self.workspace_cleanup()
+        self.workspace_create()
+
+    def workspace_create(self):
+        """
+        Create the workspace directory and specified subdirectories.
+        TODO: Improve docs.
+        """
+        os.path.exists(self.workingdir) or os.mkdir(self.workingdir)
+
+        # Create subdirectories
+        if hasattr(self, 'directories'):
+            for subdir_name in self.directories:
+                subdir = self.wdPath(self.__name__, subdir_name)
+                if not os.path.exists(subdir):
+                    os.mkdir(subdir)
+                subdir_name += self.subdir_suffix
+                setattr(self, subdir_name, subdir)
+
+    def workspace_cleanup(self, force=False):
+        """
+        Remove the workspace directory.
+        """
+        if self.cleanup or force:
+            os.path.exists(self.workingdir) and shutil.rmtree(self.workingdir)
+
+
+    def find_daemon(self, cmd=None, use_path=True):
+        """
+        Compute appropriate path to the daemon executable based on ``self.daemon_candidates`` and $PATH.
+        """
+        if not hasattr(self, 'daemon_candidates'):
+            return cmd
+
+        candidates = self.daemon_candidates
+        if use_path:
+            candidates += [os.path.join(path, cmd) for path in os.environ["PATH"].split(os.pathsep)]
+
+        for candidate in candidates:
+            program = self.find_thing(candidate)
+            if program and os.access(program, os.X_OK):
+                return program
+
+    def find_configuration(self):
+        """
+        Compute appropriate path to configuration file based on ``self.configuration_candidates``.
+        """
+        if not hasattr(self, 'configuration_candidates'):
+            return
+
+        candidates = self.configuration_candidates
+        for candidate in candidates:
+            config = self.find_thing(candidate)
+            if config and os.path.isfile(config):
+                return config
+
+    def find_thing(self, pattern):
+        """
+        Apply shell glob to candidate pattern to find appropriate file.
+        """
+        # TODO: Currently gets the last item of the list as it is assumed to be the most recent one. Improve this.
+        candidates = glob.glob(pattern)
+        if candidates:
+            recent = candidates[-1]
+            return recent
+
 
 class CascadedLayer(object):
 

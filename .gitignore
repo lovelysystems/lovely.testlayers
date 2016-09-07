@@ -10,3 +10,4 @@ develop-eggs/
 /dist/
 /downloads/
 .tox/
+/.idea
