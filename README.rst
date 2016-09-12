@@ -1,25 +1,38 @@
+**************************************************
 Lovely Testing Layers for use with zope.testrunner
 **************************************************
 
-This package includes various server test layers for mysql, postgres,
-nginx, memcached and cassandra. A generic server layer is also
-available for use with any network based server implementation.
+Introduction
+============
+This package includes various server test layers and
+a generic server layer for use with any network based
+server implementation.
 
-Development Setup (MAC)
-=======================
+It currently provides server layers for these fine
+database and web servers (in alphabetical order):
 
-Macports need to be installed (http://www.macports.org/install.php)
+- ApacheDS
+- Cassandra
+- Memcached
+- MongoDB
+- MySQL
+- Nginx
+- OpenLDAP
+- PostgreSQL
 
-Make sure your port tree is added to the include paths by adding the
-following lines to your ``~/.profile``::
 
-    export C_INCLUDE_PATH=/opt/local/include
-    export LIBRARY_PATH=/opt/local/lib
+Setup
+=====
+While there are buildout targets based on ``hexagonit.recipe.cmmi`` and
+``zc.recipe.cmmi`` included for building PostgreSQL and Memcached inline,
+it is perfectly fine to use the native system installments of the
+respective services.
 
-Load your new ``~/.profile``::
 
-    . ~/.profile
+Self-tests
+==========
+``lovely.testlayers`` ships with a bunch of built-in self-tests
+for verifying the functionality of the respective test layers.
 
-Install required ports::
+To get started on that, please follow up reading `<TESTS.rst>`__.
 
-    sudo port install python27 coreutils mysql
