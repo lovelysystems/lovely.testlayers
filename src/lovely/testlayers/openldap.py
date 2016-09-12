@@ -359,7 +359,7 @@ class OpenLDAPLayer(WorkspaceLayer, ServerLayer, OpenLDAPConfigurationMixin, Ope
         cmd_arguments['d'] = 255
         cmd_arguments_string = self.serialize_arguments(cmd_arguments)
 
-        self.start_cmd = u'{program} {arguments}'.format(program=self.slapd_bin, arguments=cmd_arguments_string)
+        self.start_cmd = u'{program} {arguments}'.format(program=self.slapd_bin, arguments=cmd_arguments_string).encode('utf-8')
         print >>sys.stderr, 'self.start_cmd:', self.start_cmd
         logger.debug('start_cmd=%s' % self.start_cmd)
 

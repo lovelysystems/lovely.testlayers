@@ -10,6 +10,7 @@ Unreleased
 
  - Rename DEVELOP.txt into TESTS.rst to improve rendering on GitHub
  - Update README.rst
+ - Python 2.6 / Java 1.8 compatibility for LDAP tests
 
 
 2016/09/07 0.7.0
