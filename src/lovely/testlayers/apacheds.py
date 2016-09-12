@@ -193,7 +193,7 @@ class ApacheDSLayer(WorkspaceLayer, ServerLayer, OpenLDAPLayerClientMixin):
 
         # FIXME: *Optionally* use wrapper.debug=true
         cmd_arguments_string = u'--console "{configfile}" wrapper.debug=true'.format(configfile=self.apacheds_conf)
-        self.start_cmd = u'{program} {arguments}'.format(program=self.apacheds_bin, arguments=cmd_arguments_string)
+        self.start_cmd = u'{program} {arguments}'.format(program=self.apacheds_bin, arguments=cmd_arguments_string).encode('utf-8')
         print >>sys.stderr, 'self.start_cmd:', self.start_cmd
         logger.debug('start_cmd=%s' % self.start_cmd)
 

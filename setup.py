@@ -42,9 +42,9 @@ long_description='\n'.join((
 
 setup(
     name = 'lovely.testlayers',
-    version = '0.7.0',
-    description="mysql, postgres nginx, memcached cassandra test"+\
-                " layers for use with zope.testrunner",
+    version = '0.7.1',
+    description="test layers for use with zope.testrunner: " \
+                "apacheds, cassandra, memcached, mongodb, mysql, nginx, openldap, postgresql",
     long_description=long_description,
     packages = find_packages('src'),
     author = "Lovely Systems",

@@ -94,9 +94,15 @@ Insert some data::
 
 And query it::
 
-    >>> client.search_s('dc=test,dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=user1@test.example.com)', ['cn', 'uid'])
-    [('cn=User 1,ou=users,dc=test,dc=example,dc=com', {'uid': ['user1@test.example.com'], 'cn': ['User 1']})]
+    >>> response = client.search_s('dc=test,dc=example,dc=com', ldap.SCOPE_SUBTREE, '(uid=user1@test.example.com)', ['cn', 'uid'])
+    >>> response[0][0]
+    'cn=User 1,ou=users,dc=test,dc=example,dc=com'
 
+    >>> response[0][1]['uid']
+    ['user1@test.example.com']
+
+    >>> response[0][1]['cn']
+    ['User 1']
 
 
 Clean up
